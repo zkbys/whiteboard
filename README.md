@@ -15,7 +15,7 @@ Latest code baseline:
 - `whiteboard-infographic-pipeline-orchestrator/SKILL.md` updated with calibration and token sync requirements.
 - `hand-drawn-infographic-video-board/scripts/create_calibration_tool.py` for browser-based bbox calibration.
 - `hand-drawn-infographic-video-board/scripts/generate_board_package.py` with calibration-file support.
-- `whiteboard-infographic-video-renderer/scripts/render_multi_board_project.mjs` with `audio/word_timing.json` and `sync/action_timing.json`.
+- `whiteboard-infographic-video-renderer/scripts/render_multi_board_project.mjs` with `audio/word_timing.json`, `sync/action_timing.json`, renderer-level action rhythm, `sync/camera_plan.json`, and action/camera QA reports.
 
 Do not publish old folders such as `whiteboard-infographic-prototype-v0.*`, `integration-smoke-test-*`, raw audio, raw videos, or generated run outputs as the main package.
 
@@ -40,7 +40,7 @@ Topic or rough script
 | `ip-hand-drawn-infographic-planner` | Convert script beats into semantic board plans and image prompts. | `infographic_plan.json`, `board_specs/*.json`, `image_prompts/*.prompt.md` |
 | `hand-drawn-infographic-creator` | Turn board prompts into final model-ready image prompts and review notes. | `creator_outputs/*.md`, `imagegen_prompts/*.txt` |
 | `hand-drawn-infographic-video-board` | Convert board PNGs and specs into exact control-layer manifests. | `board_manifest.json`, `annotation_manifest.json`, `motion_plan.json`, `combined_motion_plan.json` |
-| `whiteboard-infographic-video-renderer` | Generate narration, measured timing, HyperFrames, MP4 preview, and keyframes. | `audio/`, `sync/`, `video/hyperframes/`, `video/preview.mp4` |
+| `whiteboard-infographic-video-renderer` | Generate narration, measured timing, renderer action rhythm, camera strategy, HyperFrames, MP4 preview, keyframes, and QA reports. | `audio/`, `sync/`, `video/hyperframes/`, `video/preview.mp4` |
 | `whiteboard-infographic-pipeline-orchestrator` | Enforce the full run order and acceptance checks. | `integration_report.md` |
 
 ## Requirements
@@ -86,7 +86,7 @@ A current run is complete only when it produces:
 - `board_asset_manifest.json` with local `file` PNG assets.
 - Optional `calibration/*.element_bboxes.json` when PNG layout needs manual alignment.
 - D output under `board_source_for_e/`.
-- E output with `audio/voiceover_timing.json`, `audio/word_timing.json`, `sync/action_timing.json`, `video/hyperframes/`, `video/preview.mp4`, `video/keyframes/`, and `video/renderer_report.json`.
+- E output with `audio/voiceover_timing.json`, `audio/word_timing.json`, `sync/action_timing.json`, `sync/camera_plan.json`, `sync/action_camera_qa_report.md`, `video/hyperframes/`, `video/preview.mp4`, `video/keyframes/`, and `video/renderer_report.json`.
 - Passing HyperFrames `lint`, `validate`, and `inspect` checks, allowing only documented non-blocking warnings.
 - Passing model-PNG identity check from `images/` to D `board.png` to HyperFrames board assets.
 

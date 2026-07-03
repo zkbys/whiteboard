@@ -92,7 +92,10 @@ project-output/
 │   ├── word_timing.json
 │   └── segments/
 ├── sync/
-│   └── action_timing.json
+│   ├── action_timing.json
+│   ├── camera_plan.json
+│   ├── action_camera_qa_report.md
+│   └── action_camera_qa_report.json
 ├── video/
 │   ├── hyperframes/
 │   │   ├── index.html
@@ -124,6 +127,7 @@ project-output/
 ```
 
 The output `board/combined_motion_plan.json` and `video/hyperframes/assets/board/motion_plan.json` are timing-updated from measured TTS duration.
+In multi-board mode, renderer action rhythm fields and camera strategy fields are also written into the output `board/combined_motion_plan.json` and the HyperFrames asset copy.
 
 ## Timing Behavior
 
@@ -137,10 +141,74 @@ The output `board/combined_motion_plan.json` and `video/hyperframes/assets/board
 8. Write `sync/action_timing.json` by matching action `spokenAnchor` values against token spans.
 9. Recalculate motion plan segment `start`, `speechEnd`, and `end`.
 10. Recalculate action `offset` from `sync/action_timing.json` when possible, then `anchorRatio`, then a bounded fallback.
+11. Apply renderer action rhythm in multi-board mode: cursor pre-arrival, draw start, hold-after, light staggering, minimum gap, and compression-to-fit status.
+12. Apply renderer camera strategy in multi-board mode and write `sync/camera_plan.json`.
+13. After render or skipped-render validation, write action/camera QA reports under `sync/`.
 
 For multi-board mode, match voiceover action `anchorRatio` by segment id and action order, but keep boardId, target, element, annotation, and action type from `combined_motion_plan.json`.
 
 The current token sync is not true TTS WordBoundary data. It is a practical cue-tokenized layer that records confidence and source for every matched action. Low-confidence or fallback actions must be reported instead of hidden.
+
+## Action Rhythm Contract
+
+In multi-board mode, each `sync/action_timing.json` action may include:
+
+```json
+{
+  "rhythm": {
+    "source": "renderer-action-rhythm-v0.1",
+    "preArrivalSec": 0.16,
+    "cursorMoveLeadSec": 1.18,
+    "drawStartLeadSec": 0,
+    "holdAfterSec": 0.42,
+    "minGapSec": 0.12,
+    "staggerSec": 0.07,
+    "cursorMoveStartOffset": 0,
+    "cursorArrivalOffset": 0.84,
+    "drawStartOffset": 1,
+    "drawDoneOffset": 1.72,
+    "holdDoneOffset": 2.14,
+    "compressedToFit": false
+  }
+}
+```
+
+The timing-updated `board/combined_motion_plan.json` copies this rhythm object onto each corresponding action. `compressedToFit=true` means the requested rhythm could not fully fit inside the measured segment span and must be visible in QA.
+
+## Camera Strategy Contract
+
+In multi-board mode, E writes:
+
+```text
+sync/camera_plan.json
+```
+
+It contains one row per segment with:
+
+- `strategy`: one of `overview`, `region`, `emphasis`, or `recovery`.
+- `focusStrategy`: the zoom class used for the segment focus camera.
+- `targetBbox`: the segment target/action bbox union used as a reference.
+- `entryCamera`, `focusCamera`, and `exitCamera` where applicable.
+- `zoomThresholds.warnAbove` and `zoomThresholds.maxAllowed`.
+
+`combined_motion_plan.segments[]` receives `cameraStrategy` and `cameraPlan`. Bbox and D camera values remain control-layer references; E is allowed to dampen zoom and add overview/recovery phases.
+
+## Action / Camera QA Contract
+
+After multi-board render, E writes:
+
+```text
+sync/action_camera_qa_report.md
+sync/action_camera_qa_report.json
+```
+
+The report must cover:
+
+- action sync source and fallback status.
+- rhythm compression status.
+- bbox missing/out-of-bounds/near-edge status.
+- camera strategy and zoom threshold status.
+- keyframe manifest and contact-sheet completeness.
 
 ## HyperFrames Requirements
 
@@ -163,3 +231,4 @@ The current token sync is not true TTS WordBoundary data. It is a practical cue-
 - MP4 duration differs from `voiceover_timing.json.totalDuration` by more than 0.1 seconds.
 - In multi-board mode, keyframe action count mismatch or missing `boardId`, `segment`, `annotation`, `type`, `element`, `drawStart`, or `drawDone` in `keyframe_manifest.json`.
 - A current post-optimization run missing both `audio/word_timing.json` and `sync/action_timing.json`.
+- A current multi-board post-optimization run missing `sync/camera_plan.json` or `sync/action_camera_qa_report.md`.

@@ -228,13 +228,16 @@ audio/voiceover_timing.json
 audio/word_timing.json
 audio/captions.srt
 sync/action_timing.json
+sync/camera_plan.json
+sync/action_camera_qa_report.md
 video/hyperframes/
 video/preview.mp4
-video/keyframes/contact_sheet_start_done.jpg
+video/keyframes/contact_sheet_start.jpg
+video/keyframes/contact_sheet_done.jpg
 video/renderer_report.json
 ```
 
-Prefer runs where `audio/word_timing.json` contains cue `tokens`, `combined_motion_plan.json` actions show `anchorRatioSource: "sync/action_timing.json"`, and `sync/action_timing.json` action rows use tokenized or direct cue sources rather than fallback sources. Any low-confidence or fallback sync should be recorded in `integration_report.md`.
+Prefer runs where `audio/word_timing.json` contains cue `tokens`, `combined_motion_plan.json` actions show `anchorRatioSource: "sync/action_timing.json"`, and `sync/action_timing.json` action rows use tokenized or direct cue sources rather than fallback sources. Any low-confidence or fallback sync, rhythm compression, bbox issue, camera zoom warning, or missing keyframe artifact should be recorded in `integration_report.md`.
 
 ## 8. Verify asset identity
 
@@ -255,6 +258,7 @@ If this fails, regenerate D/E from the correct manifest. Do not patch the report
 - Manual image download source and exact file names.
 - Calibration files used and unresolved alignment issues.
 - Word/anchor sync confidence from `sync/action_timing.json`.
+- Camera strategy and action/camera QA from `sync/camera_plan.json` and `sync/action_camera_qa_report.md`.
 - Asset identity results.
 - Keyframe/contact-sheet inspection.
 - Known degradations and recovery notes.

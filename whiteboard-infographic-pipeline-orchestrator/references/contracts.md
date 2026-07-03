@@ -177,6 +177,8 @@ audio/voiceover_timing.json
 audio/word_timing.json
 audio/captions.srt
 sync/action_timing.json
+sync/camera_plan.json
+sync/action_camera_qa_report.md
 video/hyperframes/
 video/preview.mp4
 video/keyframes/
@@ -186,6 +188,12 @@ video/renderer_report.json
 E must measure actual audio duration with `ffprobe` and update timing from real audio. Estimated script duration is not enough.
 
 Current sync granularity is `spokenAnchor-cue-tokenized`: the renderer uses Edge TTS WebVTT cue timing plus `Intl.Segmenter` token spans. If a real WordBoundary or forced-alignment source is added later, it should replace `audio/word_timing.json` without changing the D/E handoff contract.
+
+Current multi-board action rhythm is renderer-owned: `sync/action_timing.json` and the timing-updated `board/combined_motion_plan.json` carry early cursor arrival, draw start, hold-after, light staggering, and compression-to-fit metadata.
+
+Current multi-board camera strategy is renderer-owned: `sync/camera_plan.json` records `overview`, `region`, `emphasis`, and `recovery` segment strategies. D camera and bbox fields remain references; E dampens final zoom and records threshold status in QA.
+
+`sync/action_camera_qa_report.md` must summarize sync source/fallbacks, rhythm compression, bbox boundary status, camera zoom threshold status, and keyframe artifact completeness.
 
 ## Asset identity contract
 

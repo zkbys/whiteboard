@@ -141,7 +141,8 @@ orchestrator-test-ai-tools-overload/audio/voiceover_timing.json
 orchestrator-test-ai-tools-overload/audio/captions.srt
 orchestrator-test-ai-tools-overload/video/hyperframes/
 orchestrator-test-ai-tools-overload/video/preview.mp4
-orchestrator-test-ai-tools-overload/video/keyframes/contact_sheet_start_done.jpg
+orchestrator-test-ai-tools-overload/video/keyframes/contact_sheet_start.jpg
+orchestrator-test-ai-tools-overload/video/keyframes/contact_sheet_done.jpg
 orchestrator-test-ai-tools-overload/video/renderer_report.json
 ```
 

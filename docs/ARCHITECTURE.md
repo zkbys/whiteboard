@@ -25,8 +25,8 @@ topic_input.txt
 - C owns semantic board planning only. C must not own final bbox, cursor, camera, or animation coordinates.
 - Creator owns prompt refinement and image-generation review notes.
 - The operator owns manual PNG handoff when an image tool exposes previews but no stable file path.
-- D owns board-control geometry, annotation manifests, and motion plans.
-- E owns measured audio timing, tokenized spoken-anchor sync, HyperFrames output, MP4 preview, and keyframes.
+- D owns board-control geometry, annotation manifests, initial camera references, and motion plans.
+- E owns measured audio timing, tokenized spoken-anchor sync, renderer-level action rhythm, renderer camera strategy, HyperFrames output, MP4 preview, keyframes, and action/camera QA.
 - The orchestrator owns run order and acceptance reporting.
 
 ## Latest Version Signals
@@ -37,6 +37,9 @@ Use the package as current only if these features are present:
 - D includes `scripts/create_calibration_tool.py`.
 - E writes `audio/word_timing.json`.
 - E writes `sync/action_timing.json`.
+- E writes rhythm metadata into `sync/action_timing.json` and the timing-updated `board/combined_motion_plan.json`.
+- E writes `sync/camera_plan.json` with overview, region, emphasis, and recovery strategies instead of mechanically using each bbox as final framing.
+- E writes `sync/action_camera_qa_report.md` after render or skipped-render validation.
 - E records `anchorRatioSource=sync/action_timing.json` when anchors match.
 - The orchestrator acceptance criteria mention calibration and tokenized sync.
 

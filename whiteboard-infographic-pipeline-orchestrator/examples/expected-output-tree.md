@@ -41,13 +41,20 @@ project-output/
 ├── audio/
 │   ├── narration.wav
 │   ├── voiceover_timing.json
+│   ├── word_timing.json
 │   └── captions.srt
+├── sync/
+│   ├── action_timing.json
+│   ├── camera_plan.json
+│   ├── action_camera_qa_report.md
+│   └── action_camera_qa_report.json
 ├── video/
 │   ├── hyperframes/
 │   ├── preview.mp4
 │   ├── renderer_report.json
 │   └── keyframes/
 │       ├── keyframe_manifest.json
-│       └── contact_sheet_start_done.jpg
+│       ├── contact_sheet_start.jpg
+│       └── contact_sheet_done.jpg
 └── integration_report.md
 ```

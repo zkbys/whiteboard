@@ -181,6 +181,7 @@ Rules:
 - Every annotatable element must have `bbox`, `camera`, `cursor`, and `annotations`.
 - Annotation geometry must be exact numeric coordinates, not rough regions.
 - Annotation ids must be stable because `motion_plan.json` actions reference them.
+- `camera` is D's calibrated control-layer camera reference. E may generate a renderer-level `sync/camera_plan.json` with overview, region, emphasis, and recovery strategies, but it should not require D to stop emitting calibrated element cameras.
 
 ## `annotation_manifest.json`
 
@@ -251,6 +252,7 @@ Rules:
 - Every action must bind `spokenAnchor`, `element`, and `annotation`.
 - `annotation` must exist in `board_manifest.json` and `annotation_manifest.json`.
 - Camera-only segments may have `actions: []`, but annotation segments may not omit action coordinates.
+- Segment `camera` is an initial focus reference. In current multi-board E renders, final camera movement is strategyized after measured audio timing and recorded in `sync/camera_plan.json`.
 
 ## `board_index.json`
 

@@ -25,7 +25,7 @@ For faster iteration:
 node scripts/render_whiteboard_project.mjs --project-dir /path/to/project-output --quality draft
 ```
 
-4. Check `video/renderer_report.json`, `audio/voiceover_timing.json`, `video/preview.mp4`, `video/hyperframes/`, and `video/keyframes/keyframe_manifest.json`.
+4. Check `video/renderer_report.json`, `audio/voiceover_timing.json`, `sync/action_timing.json`, `sync/camera_plan.json`, `sync/action_camera_qa_report.md`, `video/preview.mp4`, `video/hyperframes/`, and `video/keyframes/keyframe_manifest.json`.
 5. Treat `validate` and `inspect` failures as blocking. `lint` warnings may be reported if there are no lint errors and the generated video artifacts are complete.
 
 ## Multi-Board Workflow
@@ -48,6 +48,7 @@ Rules:
 - Switch the visual board by `segment.boardId`.
 - Use each board's consumable visual asset as the visual layer: local `board.png`/`asset.localPath`, or `asset.kind=url` for cloud/object-storage model outputs.
 - Use `board_manifest.json`, `annotation_manifest.json`, and `combined_motion_plan.json` as the control layer.
+- Add renderer-level action rhythm and camera strategy only after measured audio timing exists; do not push these fields back into C's semantic plan.
 
 ## Defaults
 
@@ -65,8 +66,23 @@ Rules:
 - Write `audio/word_timing.json` and `sync/action_timing.json` when subtitle cues are available. In the current Edge TTS path, the local runtime exposes sentence/cue timing rather than true TTS WordBoundary events, so the renderer segments each cue into token spans, matches `spokenAnchor` against those spans, and falls back to character interpolation only when token matching is unavailable. Every action records sync confidence and sync source.
 - Update `motion_plan.json` or multi-board `combined_motion_plan.json` from measured timing. Single-board mode saves a one-time `.before-renderer-timing.json` backup before overwriting the source plan. Multi-board mode writes the timing-updated combined plan into the output package.
 - Prefer `sync/action_timing.json` for action offsets. If no spokenAnchor match exists, fall back to `voiceover_segments.json` action `anchorRatio`; if missing, clamp the existing `motion_plan.json` offset into the measured segment span.
+- Add an action rhythm layer in multi-board mode: cursor pre-arrival, draw start, hold-after, light staggering, minimum gaps, and compression-to-fit status are recorded in `sync/action_timing.json` and copied into `board/combined_motion_plan.json`.
 - Extract two keyframes for every action: `start` at `segment.start + action.offset` and `done` at `start + action.duration`.
-- Start camera movement before the first action in a segment and keep the camera transition short enough that the frame is mostly settled when annotation drawing starts.
+- Start cursor movement early enough that it is positioned before drawing begins, using action rhythm metadata rather than a fixed lead time.
+
+## Camera Rules
+
+- Multi-board mode writes `sync/camera_plan.json`.
+- Camera strategies are `overview`, `region`, `emphasis`, and `recovery`.
+- Bbox and D camera fields are references, not final framing commands. E dampens zoom and groups attention by segment/board so the camera does not mechanically follow every individual bbox.
+- Camera zoom thresholds are reported in `sync/action_camera_qa_report.md`; current warning threshold is `scale > 1.35` and max threshold is `scale > 1.7`.
+- Recovery phases return the board toward overview near board end.
+
+## QA Rules
+
+- After a multi-board render, write `sync/action_camera_qa_report.md` and `.json`.
+- The QA report must cover sync source, fallback/low-source actions, rhythm compression, bbox boundary status, camera zoom threshold status, and keyframe artifact completeness.
+- If render or keyframe extraction is intentionally skipped, the QA report should still be written and mark keyframes as skipped.
 
 ## Renderer Script
 

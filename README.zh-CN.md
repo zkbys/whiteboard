@@ -15,7 +15,7 @@
 - `whiteboard-infographic-pipeline-orchestrator/SKILL.md`：总编排 Skill，包含生图交接、校准、同步和验收要求。
 - `hand-drawn-infographic-video-board/scripts/create_calibration_tool.py`：浏览器拖框校准工具，用于生成 bbox 校准 JSON。
 - `hand-drawn-infographic-video-board/scripts/generate_board_package.py`：D 阶段控制层生成脚本，支持读取校准文件。
-- `whiteboard-infographic-video-renderer/scripts/render_multi_board_project.mjs`：E 阶段渲染器，支持 `audio/word_timing.json` 和 `sync/action_timing.json`。
+- `whiteboard-infographic-video-renderer/scripts/render_multi_board_project.mjs`：E 阶段渲染器，支持 `audio/word_timing.json`、`sync/action_timing.json`、渲染器动作节奏层、`sync/camera_plan.json` 和 action/camera QA 报告。
 
 不要把旧目录作为当前主线发布，例如 `whiteboard-infographic-prototype-v0.*`、`integration-smoke-test-*`、原始音频、原始视频或生成运行结果。
 
@@ -40,7 +40,7 @@
 | `ip-hand-drawn-infographic-planner` | 把口播和视觉节奏转成语义白板规划和生图提示词。 | `infographic_plan.json`, `board_specs/*.json`, `image_prompts/*.prompt.md` |
 | `hand-drawn-infographic-creator` | 把白板语义 prompt 转成最终可用于生图模型的提示词和审查说明。 | `creator_outputs/*.md`, `imagegen_prompts/*.txt` |
 | `hand-drawn-infographic-video-board` | 把 board PNG 和 board spec 转成精确控制层。 | `board_manifest.json`, `annotation_manifest.json`, `motion_plan.json`, `combined_motion_plan.json` |
-| `whiteboard-infographic-video-renderer` | 生成配音、真实 timing、HyperFrames 工程、MP4 预览和关键帧。 | `audio/`, `sync/`, `video/hyperframes/`, `video/preview.mp4` |
+| `whiteboard-infographic-video-renderer` | 生成配音、真实 timing、动作节奏、镜头策略、HyperFrames 工程、MP4 预览、关键帧和 QA 报告。 | `audio/`, `sync/`, `video/hyperframes/`, `video/preview.mp4` |
 | `whiteboard-infographic-pipeline-orchestrator` | 固定完整执行顺序，并输出最终验收报告。 | `integration_report.md` |
 
 ## 环境要求
@@ -86,7 +86,7 @@ runs/example-output/images/board-02.model-generated.png
 - `board_asset_manifest.json`，其中本地模型 PNG 使用 `asset.kind=file`。
 - 如果模型 PNG 和控制层初稿不对齐，提供 `calibration/*.element_bboxes.json`。
 - D 阶段输出 `board_source_for_e/`。
-- E 阶段输出 `audio/voiceover_timing.json`、`audio/word_timing.json`、`sync/action_timing.json`、`video/hyperframes/`、`video/preview.mp4`、`video/keyframes/` 和 `video/renderer_report.json`。
+- E 阶段输出 `audio/voiceover_timing.json`、`audio/word_timing.json`、`sync/action_timing.json`、`sync/camera_plan.json`、`sync/action_camera_qa_report.md`、`video/hyperframes/`、`video/preview.mp4`、`video/keyframes/` 和 `video/renderer_report.json`。
 - HyperFrames `lint`、`validate`、`inspect` 没有阻断错误；非阻断 warning 必须记录。
 - 模型 PNG 从 `images/` 到 D `board.png` 再到 HyperFrames 资产的文件一致性校验通过。
 

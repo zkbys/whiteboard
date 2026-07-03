@@ -136,6 +136,7 @@ duration
 - Preserve the hand-drawn whiteboard style: parchment background, charcoal ink, teal structure, ocean-blue annotations, amber emphasis, and occasional red warning marks.
 - Make every meaningful visual object addressable with a stable `id`.
 - Use board-image pixel coordinates for `bbox`, `camera`, `cursor`, and annotation geometry.
+- Treat `camera` as a precise control-layer reference. The E renderer may add overview/region/emphasis/recovery camera strategy and dampen zoom at render time, but D should still provide calibrated element cameras.
 - Prefer action-level sync using `spokenAnchor`; use sentence-level timing only as a fallback for segment start/end.
 - Keep the board sparse. If a script has too many visual objects, produce multiple board packages.
 - Use deterministic layout as a first draft, but require manual bbox calibration when the final PNG does not match the generated control layer.

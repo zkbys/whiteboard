@@ -32,7 +32,8 @@ topic_input.txt
 
 ```text
 video/preview.mp4
-video/keyframes/contact_sheet_start_done.jpg
+video/keyframes/contact_sheet_start.jpg
+video/keyframes/contact_sheet_done.jpg
 integration_report.md
 ```
 

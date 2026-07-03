@@ -20,6 +20,21 @@ const DEFAULT_VOICE = {
 
 const SUPPORTED_ACTIONS = new Set(["underline", "circle", "box", "check", "strike"]);
 const HYPERFRAMES_VERSION = "0.6.99";
+const ACTION_RHYTHM = {
+  preArrivalSec: 0.16,
+  cursorMoveLeadSec: 1.18,
+  drawStartLeadSec: 0,
+  holdAfterSec: 0.42,
+  minGapSec: 0.12,
+  staggerSec: 0.07,
+};
+const CAMERA_STRATEGY = {
+  zoomWarn: 1.35,
+  zoomMax: 1.7,
+  regionMax: 1.2,
+  emphasisMax: 1.36,
+  maxZoomMovesPerBoard: 3,
+};
 
 let runContext = {
   projectDir: null,
@@ -163,6 +178,39 @@ function formatSeconds(value) {
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
+}
+
+function numberOr(value, fallback) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function bboxCenter(bbox) {
+  return [Number(bbox[0]) + Number(bbox[2]) / 2, Number(bbox[1]) + Number(bbox[3]) / 2];
+}
+
+function isValidBbox(bbox) {
+  return (
+    Array.isArray(bbox) &&
+    bbox.length === 4 &&
+    bbox.every((value) => Number.isFinite(Number(value))) &&
+    Number(bbox[2]) > 0 &&
+    Number(bbox[3]) > 0
+  );
+}
+
+function normalizeBbox(bbox) {
+  return bbox.map((value) => formatSeconds(value));
+}
+
+function unionBboxes(items) {
+  const bboxes = items.filter(isValidBbox);
+  if (!bboxes.length) return null;
+  const minX = Math.min(...bboxes.map((bbox) => Number(bbox[0])));
+  const minY = Math.min(...bboxes.map((bbox) => Number(bbox[1])));
+  const maxX = Math.max(...bboxes.map((bbox) => Number(bbox[0]) + Number(bbox[2])));
+  const maxY = Math.max(...bboxes.map((bbox) => Number(bbox[1]) + Number(bbox[3])));
+  return normalizeBbox([minX, minY, maxX - minX, maxY - minY]);
 }
 
 function cleanName(value) {
@@ -394,6 +442,54 @@ function actionKey(segmentId, index) {
   return `${segmentId}:${index}`;
 }
 
+function rhythmDefaultsForAction(action, index) {
+  const emphasisHold = action?.type === "circle" || action?.type === "box" ? 0.48 : ACTION_RHYTHM.holdAfterSec;
+  return {
+    source: "renderer-action-rhythm-v0.1",
+    preArrivalSec: ACTION_RHYTHM.preArrivalSec,
+    cursorMoveLeadSec: ACTION_RHYTHM.cursorMoveLeadSec,
+    drawStartLeadSec: ACTION_RHYTHM.drawStartLeadSec,
+    holdAfterSec: emphasisHold,
+    minGapSec: ACTION_RHYTHM.minGapSec,
+    staggerSec: formatSeconds(Math.min(index * ACTION_RHYTHM.staggerSec, 0.21)),
+  };
+}
+
+function placeRhythmedAction({
+  rawOffset,
+  duration,
+  index,
+  maxStart,
+  previousHoldDone,
+  segmentSpan,
+  action,
+}) {
+  const rhythm = rhythmDefaultsForAction(action, index);
+  const desiredOffset = Number(rawOffset) + Number(rhythm.drawStartLeadSec) + Number(rhythm.staggerSec);
+  const minAfterPrevious = index === 0 ? 0 : Number(previousHoldDone) + Number(rhythm.minGapSec);
+  const spacedOffset = Math.max(desiredOffset, minAfterPrevious);
+  const offset = clamp(spacedOffset, 0, maxStart);
+  const drawDoneOffset = offset + Number(duration);
+  const requestedHoldDone = drawDoneOffset + Number(rhythm.holdAfterSec);
+  const holdDoneOffset = Math.min(Number(segmentSpan), requestedHoldDone);
+  const compressed = offset < spacedOffset - 0.001 || holdDoneOffset < requestedHoldDone - 0.001;
+
+  return {
+    offset: formatSeconds(offset),
+    rhythm: {
+      ...rhythm,
+      desiredOffset: formatSeconds(desiredOffset),
+      cursorMoveStartOffset: formatSeconds(Math.max(0, offset - Number(rhythm.cursorMoveLeadSec))),
+      cursorArrivalOffset: formatSeconds(Math.max(0, offset - Number(rhythm.preArrivalSec))),
+      drawStartOffset: formatSeconds(offset),
+      drawDoneOffset: formatSeconds(drawDoneOffset),
+      holdDoneOffset: formatSeconds(holdDoneOffset),
+      compressedToFit: compressed,
+    },
+    holdDoneOffset,
+  };
+}
+
 function buildSyncTimings({ projectDir, source, timing, combinedMotionPlan }) {
   const sourceById = mapById(source.segments || []);
   const timedById = mapById(timing.segments || []);
@@ -440,6 +536,7 @@ function buildSyncTimings({ projectDir, source, timing, combinedMotionPlan }) {
     const sourceActions = sourceSegment.actions || [];
     const segmentStart = Number(timedSegment.start);
     const segmentSpan = Math.max(0.12, Number(timedSegment.end) - segmentStart);
+    let previousHoldDone = 0;
 
     for (const [index, motionAction] of (segment.actions || []).entries()) {
       const sourceAction = sourceActions[index] || {};
@@ -448,7 +545,7 @@ function buildSyncTimings({ projectDir, source, timing, combinedMotionPlan }) {
       const duration = formatSeconds(Math.min(requestedDuration, Math.max(0.12, segmentSpan - 0.05)));
       const maxStart = Math.max(0, segmentSpan - duration - 0.05);
       const anchorTiming = resolveAnchorTiming(spokenAnchor, timedSegment, cues);
-      let offset;
+      let rawOffset;
       let anchorStart = null;
       let anchorEnd = null;
       let confidence = 0.2;
@@ -458,18 +555,30 @@ function buildSyncTimings({ projectDir, source, timing, combinedMotionPlan }) {
       if (anchorTiming) {
         anchorStart = formatSeconds(Number(anchorTiming.anchorStart));
         anchorEnd = formatSeconds(Number(anchorTiming.anchorEnd));
-        offset = clamp(anchorStart - 0.03, 0, maxStart);
+        rawOffset = anchorStart;
         confidence = anchorTiming.confidence;
         matchMode = anchorTiming.matchMode;
         cueText = anchorTiming.cueText;
       } else if (Number.isFinite(Number(sourceAction.anchorRatio))) {
         const speechDuration = Math.max(0.12, Number(timedSegment.speechDuration || Number(timedSegment.speechEnd) - segmentStart));
-        offset = clamp(speechDuration * Number(sourceAction.anchorRatio), 0, maxStart);
+        rawOffset = speechDuration * Number(sourceAction.anchorRatio);
         confidence = 0.36;
         matchMode = "fallback-anchorRatio";
       } else {
-        offset = clamp(Number(motionAction.offset || 0), 0, maxStart);
+        rawOffset = Number(motionAction.offset || 0);
       }
+
+      const placement = placeRhythmedAction({
+        rawOffset,
+        duration,
+        index,
+        maxStart,
+        previousHoldDone,
+        segmentSpan,
+        action: motionAction,
+      });
+      const offset = placement.offset;
+      previousHoldDone = placement.holdDoneOffset;
 
       const row = {
         segmentId: segment.id,
@@ -479,16 +588,17 @@ function buildSyncTimings({ projectDir, source, timing, combinedMotionPlan }) {
         element: motionAction.element,
         annotation: motionAction.annotation,
         spokenAnchor,
-        offset: formatSeconds(offset),
+        offset,
         duration,
-        drawStart: formatSeconds(segmentStart + offset),
-        drawDone: formatSeconds(segmentStart + offset + duration),
+        drawStart: formatSeconds(segmentStart + Number(offset)),
+        drawDone: formatSeconds(segmentStart + Number(offset) + Number(duration)),
         anchorStart: anchorStart === null ? null : formatSeconds(segmentStart + anchorStart),
         anchorEnd: anchorEnd === null ? null : formatSeconds(segmentStart + anchorEnd),
         syncConfidence: Number(confidence.toFixed(2)),
         syncSource: matchMode,
         cueText,
         tokens: anchorTiming?.tokens || [],
+        rhythm: placement.rhythm,
       };
       lookup.set(actionKey(segment.id, index), row);
       actionRows.push(row);
@@ -618,6 +728,188 @@ function boardImageRef(boardRoot, boardEntry, boardDir, manifest) {
     }
   }
   return null;
+}
+
+function overviewCameraForBoard(board, composition, preferredOverview = null) {
+  if (
+    preferredOverview &&
+    Number.isFinite(Number(preferredOverview.x)) &&
+    Number.isFinite(Number(preferredOverview.y)) &&
+    Number.isFinite(Number(preferredOverview.scale))
+  ) {
+    return {
+      x: formatSeconds(preferredOverview.x),
+      y: formatSeconds(preferredOverview.y),
+      scale: formatSeconds(preferredOverview.scale),
+    };
+  }
+  const canvas = board.manifest?.canvas || {};
+  const width = numberOr(canvas.width, composition.width || 1920);
+  const height = numberOr(canvas.height, composition.height || 1080);
+  const scale = Math.min(numberOr(composition.width, 1920) / width, numberOr(composition.height, 1080) / height);
+  return {
+    x: formatSeconds(width / 2),
+    y: formatSeconds(height / 2),
+    scale: formatSeconds(scale),
+  };
+}
+
+function cameraForBbox({ bbox, board, composition, strategy, overviewCamera = null }) {
+  const overview = overviewCamera || overviewCameraForBoard(board, composition);
+  if (!isValidBbox(bbox)) return overview;
+  const canvas = board.manifest?.canvas || {};
+  const width = numberOr(canvas.width, composition.width || 1920);
+  const height = numberOr(canvas.height, composition.height || 1080);
+  const [centerX, centerY] = bboxCenter(bbox);
+  const padding = strategy === "emphasis" ? 2.35 : 3.05;
+  const fitW = numberOr(composition.width, 1920) / Math.max(Number(bbox[2]) * padding, 1);
+  const fitH = numberOr(composition.height, 1080) / Math.max(Number(bbox[3]) * padding, 1);
+  const strategyMax = strategy === "emphasis" ? CAMERA_STRATEGY.emphasisMax : CAMERA_STRATEGY.regionMax;
+  const scale = clamp(Math.min(fitW, fitH), Number(overview.scale), strategyMax);
+  return {
+    x: formatSeconds(clamp(centerX, 0, width)),
+    y: formatSeconds(clamp(centerY, 0, height)),
+    scale: formatSeconds(scale),
+  };
+}
+
+function actionBbox(board, action) {
+  const element = board.elementsById.get(action.element);
+  const annotation = annotationFor(board, action);
+  return (
+    annotation?.targetTextBbox ||
+    annotation?.bbox ||
+    annotation?.boxBounds ||
+    element?.annotationTargetBbox ||
+    element?.bbox ||
+    null
+  );
+}
+
+function segmentFocusBbox(board, segment) {
+  const target = board.elementsById.get(segment.target);
+  const bboxes = [target?.bbox];
+  for (const action of segment.actions || []) {
+    bboxes.push(actionBbox(board, action));
+  }
+  return unionBboxes(bboxes);
+}
+
+function chooseFocusStrategy({ segment, boardPosition }) {
+  if (boardPosition.isFirst) return "region";
+  if (boardPosition.isLast) return "region";
+  const hasEmphasisAction = (segment.actions || []).some((action) => ["box", "circle", "check"].includes(action.type));
+  const text = `${segment.caption || ""} ${(segment.actions || []).map((action) => action.spokenAnchor || "").join(" ")}`;
+  if (hasEmphasisAction || /结论|关键|核心|方法|转折|最终|真正/.test(text)) return "emphasis";
+  return "region";
+}
+
+function applyCameraStrategy({ motionPlan, boards }) {
+  const composition = motionPlan.composition || { width: 1920, height: 1080 };
+  const boardOrder = new Map();
+  for (const [index, segment] of (motionPlan.segments || []).entries()) {
+    if (!boardOrder.has(segment.boardId)) boardOrder.set(segment.boardId, []);
+    boardOrder.get(segment.boardId).push(index);
+  }
+
+  const zoomMovesByBoard = new Map();
+  const cameraRows = [];
+  const segments = (motionPlan.segments || []).map((segment, index) => {
+    const board = boards[segment.boardId];
+    if (!board) return segment;
+    const indexes = boardOrder.get(segment.boardId) || [];
+    const boardIndex = indexes.indexOf(index);
+    const boardPosition = {
+      index: boardIndex,
+      count: indexes.length,
+      isFirst: boardIndex === 0,
+      isLast: boardIndex === indexes.length - 1,
+    };
+    const overview = overviewCameraForBoard(board, composition, motionPlan.overview_camera);
+    const focusStrategy = chooseFocusStrategy({ segment, boardPosition });
+    const focusBbox = segmentFocusBbox(board, segment);
+    let focusCamera = cameraForBbox({ bbox: focusBbox, board, composition, strategy: focusStrategy, overviewCamera: overview });
+    let cameraStrategy = boardPosition.isFirst ? "overview" : focusStrategy;
+    if (boardPosition.isLast) cameraStrategy = "recovery";
+
+    const boardZoomCount = zoomMovesByBoard.get(segment.boardId) || 0;
+    const isZoomMove = Number(focusCamera.scale) > Number(overview.scale) + 0.08;
+    if (isZoomMove && boardZoomCount >= CAMERA_STRATEGY.maxZoomMovesPerBoard) {
+      focusCamera = {
+        ...focusCamera,
+        scale: formatSeconds(Math.min(Number(focusCamera.scale), Number(overview.scale) + 0.12)),
+      };
+    } else if (isZoomMove) {
+      zoomMovesByBoard.set(segment.boardId, boardZoomCount + 1);
+    }
+
+    const cameraPlan = {
+      version: "0.1",
+      source: "renderer-camera-strategy-v0.1",
+      strategy: cameraStrategy,
+      focusStrategy,
+      targetBbox: focusBbox,
+      bboxSource: focusBbox ? "segment target + action annotation union" : "overview fallback",
+      entryCamera: boardPosition.isFirst ? overview : null,
+      focusCamera,
+      exitCamera: boardPosition.isLast ? overview : null,
+      zoomThresholds: {
+        warnAbove: CAMERA_STRATEGY.zoomWarn,
+        maxAllowed: CAMERA_STRATEGY.zoomMax,
+      },
+      boardPosition,
+    };
+    cameraRows.push({
+      segmentId: segment.id,
+      boardId: segment.boardId,
+      strategy: cameraStrategy,
+      focusStrategy,
+      targetBbox: focusBbox,
+      camera: focusCamera,
+      entryCamera: cameraPlan.entryCamera,
+      exitCamera: cameraPlan.exitCamera,
+      zoomStatus:
+        Number(focusCamera.scale) > CAMERA_STRATEGY.zoomMax
+          ? "fail"
+          : Number(focusCamera.scale) > CAMERA_STRATEGY.zoomWarn
+            ? "warn"
+            : "pass",
+    });
+    return {
+      ...segment,
+      camera: focusCamera,
+      cameraStrategy,
+      cameraPlan,
+    };
+  });
+
+  return {
+    motionPlan: {
+      ...motionPlan,
+      camera_strategy: {
+        version: "0.1",
+        source: "renderer-camera-strategy-v0.1",
+        strategies: ["overview", "region", "emphasis", "recovery"],
+        zoomThresholds: {
+          warnAbove: CAMERA_STRATEGY.zoomWarn,
+          maxAllowed: CAMERA_STRATEGY.zoomMax,
+        },
+        note: "BBox values are used as framing references; renderer strategy dampens zoom and adds overview/recovery phases so camera movement does not mechanically follow every individual bbox.",
+      },
+      segments,
+    },
+    cameraPlan: {
+      version: "0.1",
+      generatedAt: new Date().toISOString(),
+      source: "board manifests + combined_motion_plan.json",
+      strategies: ["overview", "region", "emphasis", "recovery"],
+      zoomThresholds: {
+        warnAbove: CAMERA_STRATEGY.zoomWarn,
+        maxAllowed: CAMERA_STRATEGY.zoomMax,
+      },
+      segments: cameraRows,
+    },
+  };
 }
 
 function loadBoardPackage({ boardRoot, boardIndexPath, combinedMotionPlanPath }) {
@@ -899,6 +1191,7 @@ function updateCombinedMotionPlan({ source, timing, combinedMotionPlan, actionTi
               anchorEnd: syncAction.anchorEnd,
             }
           : undefined,
+        rhythm: syncAction?.rhythm,
       };
     });
 
@@ -1319,7 +1612,10 @@ function generateIndexHtml({ width, height, duration, gsapScriptSrc }) {
         motionPlan.segments.forEach(function (segment, segmentIndex) {
           var state = boardStates[segment.boardId];
           var target = state.elements[segment.target] || {};
-          var camera = segment.camera || target.camera || motionPlan.overview_camera;
+          var cameraPlan = segment.cameraPlan || {};
+          var camera = cameraPlan.focusCamera || segment.camera || target.camera || motionPlan.overview_camera;
+          var entryCamera = cameraPlan.entryCamera || null;
+          var exitCamera = cameraPlan.exitCamera || null;
           var cameraState = cameraTransform(state, camera);
           var captionNode = captionNodes[segment.id];
           var previous = motionPlan.segments[segmentIndex - 1];
@@ -1328,8 +1624,16 @@ function generateIndexHtml({ width, height, duration, gsapScriptSrc }) {
             var transitionAt = Math.max(0, Number(segment.start) - 0.22);
             tl.to(prevState.frame, { opacity: 0, x: -42, duration: 0.34, ease: "power2.inOut", overwrite: "auto" }, transitionAt);
             tl.fromTo(state.frame, { opacity: 0, x: 46 }, { opacity: 1, x: 0, duration: 0.46, ease: "power2.out", overwrite: "auto" }, transitionAt);
+            if (entryCamera) {
+              var entryState = cameraTransform(state, entryCamera);
+              tl.set(state.stage, { x: entryState.x, y: entryState.y, scale: entryState.scale }, transitionAt);
+            }
           } else {
             tl.set(state.frame, { opacity: 1, x: 0 }, Math.max(0, Number(segment.start) - 0.05));
+            if (entryCamera) {
+              var sameBoardEntry = cameraTransform(state, entryCamera);
+              tl.set(state.stage, { x: sameBoardEntry.x, y: sameBoardEntry.y, scale: sameBoardEntry.scale }, Math.max(0, Number(segment.start) - 0.05));
+            }
           }
           if (segmentIndex > 0) {
             var priorNodes = nodesForSegment(motionPlan.segments[segmentIndex - 1]);
@@ -1338,9 +1642,14 @@ function generateIndexHtml({ width, height, duration, gsapScriptSrc }) {
           var actionOffsets = segment.actions.map(function (action) { return Number(action.offset); }).filter(function (value) { return Number.isFinite(value); });
           var firstActionOffset = actionOffsets.length ? Math.min.apply(null, actionOffsets) : 0.75;
           var firstDrawAt = Number(segment.start) + firstActionOffset;
-          var cameraAt = Math.max(0, Number(segment.start) - 0.18);
+          var cameraAt = Math.max(0, Math.max(Number(segment.start), firstDrawAt - 0.52));
           var cameraDuration = clamp(firstDrawAt - cameraAt - 0.18, 0.34, 0.82);
           tl.to(state.stage, { x: cameraState.x, y: cameraState.y, scale: cameraState.scale, duration: cameraDuration, ease: "power2.out" }, cameraAt);
+          if (exitCamera) {
+            var exitState = cameraTransform(state, exitCamera);
+            var exitAt = Math.max(Number(segment.start), Number(segment.end) - 0.62);
+            tl.to(state.stage, { x: exitState.x, y: exitState.y, scale: exitState.scale, duration: 0.5, ease: "power2.inOut" }, exitAt);
+          }
           tl.set(captionNode, { visibility: "visible" }, Number(segment.start) + 0.1);
           tl.to(captionNode, { opacity: 1, y: 0, duration: 0.28, ease: "power2.out", overwrite: "auto" }, Number(segment.start) + 0.12);
           tl.to(captionNode, { opacity: 0, y: 12, duration: 0.18, ease: "power1.in", overwrite: "auto" }, Math.max(Number(segment.start), Number(segment.end) - 0.18));
@@ -1349,18 +1658,20 @@ function generateIndexHtml({ width, height, duration, gsapScriptSrc }) {
             var annotation = annotationFor(state, action);
             var node = annotationNodes["mark-" + safeKey(segment.id) + "-" + safeKey(action.annotation)];
             var drawAt = Number(segment.start) + Number(action.offset);
+            var rhythm = action.rhythm || {};
             var cursorPoints = cursorPointsFor(annotation);
             var startScreen = projectPoint(state, cursorPoints.start, camera);
             var endScreen = projectPoint(state, cursorPoints.end, camera);
-            var moveAt = Math.max(Number(segment.start) + 0.08, drawAt - 0.72);
+            var moveAt = Math.max(Number(segment.start) + 0.04, drawAt - Number(rhythm.cursorMoveLeadSec || 1.18));
             addHumanCursorMove(tl, cursorState, startScreen, moveAt, actionIndex);
-            addCursorPress(tl, startScreen, Math.max(Number(segment.start), drawAt - 0.1));
-            tl.to(pulse, { x: startScreen.x - 22, y: startScreen.y - 20, scale: 1, opacity: 0.42, duration: 0.12, ease: "power1.out", overwrite: "auto" }, Math.max(Number(segment.start), drawAt - 0.12));
+            addCursorPress(tl, startScreen, Math.max(Number(segment.start), drawAt - Number(rhythm.preArrivalSec || 0.16)));
+            tl.to(pulse, { x: startScreen.x - 22, y: startScreen.y - 20, scale: 1, opacity: 0.42, duration: 0.12, ease: "power1.out", overwrite: "auto" }, Math.max(Number(segment.start), drawAt - Number(rhythm.preArrivalSec || 0.16)));
             tl.to(pulse, { scale: 1.45, opacity: 0, duration: 0.42, ease: "sine.out", overwrite: "auto" }, drawAt + 0.02);
             tl.set(node, { opacity: 1 }, drawAt);
             tl.to(node, { strokeDashoffset: 0, duration: Number(action.duration), ease: action.type === "check" ? "back.out(1.3)" : "sine.inOut" }, drawAt);
             tl.to(cursor, { x: endScreen.x, y: endScreen.y, rotation: action.type === "circle" ? 3 : 0, duration: Number(action.duration), ease: "sine.inOut" }, drawAt);
             tl.to(cursor, { rotation: 0, duration: 0.12, ease: "sine.out" }, drawAt + Number(action.duration));
+            tl.set(cursor, { x: endScreen.x, y: endScreen.y }, drawAt + Number(action.duration) + Number(rhythm.holdAfterSec || 0.42));
             cursorState = endScreen;
             actionIndex += 1;
           });
@@ -1413,6 +1724,9 @@ for (const segment of plan.segments || []) {
       element: action.element,
       spokenAnchor: action.spokenAnchor,
       sync: action.sync || null,
+      rhythm: action.rhythm || null,
+      cameraStrategy: segment.cameraStrategy || null,
+      cameraPlan: segment.cameraPlan || null,
       drawStart: Number(drawStart.toFixed(3)),
       drawDone: Number(drawDone.toFixed(3)),
       startFrame: startFile.replace(root + "/", ""),
@@ -1475,6 +1789,9 @@ function createHyperframesProject({ projectDir, hfDir, audioDir, boards, motionP
   if (existsSync(join(projectDir, "sync", "action_timing.json"))) {
     copyFileSync(join(projectDir, "sync", "action_timing.json"), join(boardAssetDir, "action_timing.json"));
   }
+  if (existsSync(join(projectDir, "sync", "camera_plan.json"))) {
+    copyFileSync(join(projectDir, "sync", "camera_plan.json"), join(boardAssetDir, "camera_plan.json"));
+  }
   writeJson(join(boardAssetDir, "motion_plan.json"), motionPlan);
   writeDataJs(join(boardAssetDir, "data.js"), boards, motionPlan);
 
@@ -1511,6 +1828,167 @@ function extractKeyframes(hfDir, videoPath, keyframeDir) {
   run("node", [join(hfDir, "scripts", "extract_action_keyframes.mjs"), videoPath, keyframeDir], { cwd: hfDir });
 }
 
+function checkBbox(board, bbox) {
+  if (!isValidBbox(bbox)) {
+    return { status: "missing", reason: "no valid bbox available" };
+  }
+  const canvas = board.manifest?.canvas || {};
+  const width = numberOr(canvas.width, 0);
+  const height = numberOr(canvas.height, 0);
+  const [x, y, w, h] = bbox.map(Number);
+  const outOfBounds = x < 0 || y < 0 || x + w > width || y + h > height;
+  const nearEdge = !outOfBounds && (x < width * 0.02 || y < height * 0.02 || x + w > width * 0.98 || y + h > height * 0.98);
+  if (outOfBounds) return { status: "fail", reason: "bbox extends outside board canvas" };
+  if (nearEdge) return { status: "warn", reason: "bbox is close to board edge" };
+  return { status: "pass", reason: "bbox inside board canvas" };
+}
+
+function rowStatus(values) {
+  if (values.includes("fail") || values.includes("missing")) return "fail";
+  if (values.includes("warn") || values.includes("skipped")) return "warn";
+  return "pass";
+}
+
+function buildActionCameraQa({ projectDir, motionPlan, boards, actionTiming, cameraPlan, keyframeDir, keyframeSummary }) {
+  const actionTimingByKey = new Map((actionTiming.actions || []).map((row) => [actionKey(row.segmentId, row.actionIndex), row]));
+  const keyframeManifestPath = join(keyframeDir, "keyframe_manifest.json");
+  const keyframeRows = existsSync(keyframeManifestPath) ? readJson(keyframeManifestPath) : [];
+  const keyframeByAction = new Map(
+    keyframeRows.map((row) => [`${row.segment}:${row.annotation}`, row]),
+  );
+  const contactStart = join(keyframeDir, "contact_sheet_start.jpg");
+  const contactDone = join(keyframeDir, "contact_sheet_done.jpg");
+  const rows = [];
+
+  for (const segment of motionPlan.segments || []) {
+    const board = boards[segment.boardId];
+    for (const [index, action] of (segment.actions || []).entries()) {
+      const syncRow = actionTimingByKey.get(actionKey(segment.id, index));
+      const bbox = board ? actionBbox(board, action) : null;
+      const bboxCheck = board ? checkBbox(board, bbox) : { status: "missing", reason: "board missing" };
+      const camera = segment.cameraPlan?.focusCamera || segment.camera || {};
+      const scale = Number(camera.scale || 1);
+      const cameraStatus =
+        scale > CAMERA_STRATEGY.zoomMax ? "fail" : scale > CAMERA_STRATEGY.zoomWarn ? "warn" : "pass";
+      const keyframeRow = keyframeByAction.get(`${segment.id}:${action.annotation}`);
+      const startFrameExists = keyframeRow?.startFrame ? existsSync(join(keyframeDir, basename(keyframeRow.startFrame))) : false;
+      const doneFrameExists = keyframeRow?.doneFrame ? existsSync(join(keyframeDir, basename(keyframeRow.doneFrame))) : false;
+      const keyframeStatus =
+        keyframeSummary.status === "skipped"
+          ? "skipped"
+          : startFrameExists && doneFrameExists
+            ? "pass"
+            : "missing";
+      rows.push({
+        segmentId: segment.id,
+        boardId: segment.boardId,
+        actionIndex: index,
+        type: action.type,
+        element: action.element,
+        annotation: action.annotation,
+        spokenAnchor: action.spokenAnchor,
+        syncSource: syncRow?.syncSource || action.sync?.source || "missing",
+        syncConfidence: syncRow?.syncConfidence ?? action.sync?.confidence ?? null,
+        syncStatus: String(syncRow?.syncSource || action.sync?.source || "").startsWith("cue-") ? "pass" : "warn",
+        rhythmStatus: action.rhythm?.compressedToFit ? "warn" : "pass",
+        bbox: isValidBbox(bbox) ? normalizeBbox(bbox) : null,
+        bboxStatus: bboxCheck.status,
+        bboxReason: bboxCheck.reason,
+        cameraStrategy: segment.cameraStrategy || segment.cameraPlan?.strategy || "legacy",
+        cameraScale: Number.isFinite(scale) ? formatSeconds(scale) : null,
+        cameraStatus,
+        keyframeStatus,
+        status: rowStatus([
+          String(syncRow?.syncSource || action.sync?.source || "").startsWith("cue-") ? "pass" : "warn",
+          action.rhythm?.compressedToFit ? "warn" : "pass",
+          bboxCheck.status,
+          cameraStatus,
+          keyframeStatus,
+        ]),
+      });
+    }
+  }
+
+  const summary = {
+    status: rowStatus(rows.map((row) => row.status)),
+    actionCount: rows.length,
+    fallbackActions: rows.filter((row) => row.syncStatus !== "pass").length,
+    rhythmCompressedActions: rows.filter((row) => row.rhythmStatus !== "pass").length,
+    bboxIssues: rows.filter((row) => row.bboxStatus !== "pass").length,
+    cameraWarnings: rows.filter((row) => row.cameraStatus !== "pass").length,
+    keyframeIssues: rows.filter((row) => row.keyframeStatus !== "pass").length,
+    keyframeArtifacts: {
+      manifest: existsSync(keyframeManifestPath),
+      contactSheetStart: existsSync(contactStart),
+      contactSheetDone: existsSync(contactDone),
+    },
+    cameraPlan: "sync/camera_plan.json",
+    actionTiming: "sync/action_timing.json",
+  };
+
+  const tableRows = rows.map((row) =>
+    [
+      row.status,
+      row.boardId,
+      row.segmentId,
+      row.annotation,
+      row.syncSource,
+      row.syncConfidence ?? "",
+      row.bboxStatus,
+      row.cameraStrategy,
+      row.cameraScale ?? "",
+      row.cameraStatus,
+      row.keyframeStatus,
+    ].join(" | "),
+  );
+  const markdown = `# Action / Camera QA Report
+
+## Summary
+
+- status: ${summary.status}
+- actions: ${summary.actionCount}
+- sync fallback or low-source actions: ${summary.fallbackActions}
+- rhythm compressed actions: ${summary.rhythmCompressedActions}
+- bbox issues: ${summary.bboxIssues}
+- camera zoom warnings/failures: ${summary.cameraWarnings}
+- keyframe issues: ${summary.keyframeIssues}
+
+## Sources
+
+- action timing: sync/action_timing.json
+- camera plan: sync/camera_plan.json
+- keyframes manifest: ${summary.keyframeArtifacts.manifest ? "video/keyframes/keyframe_manifest.json" : "missing or skipped"}
+- contact sheet start: ${summary.keyframeArtifacts.contactSheetStart ? "video/keyframes/contact_sheet_start.jpg" : "missing or skipped"}
+- contact sheet done: ${summary.keyframeArtifacts.contactSheetDone ? "video/keyframes/contact_sheet_done.jpg" : "missing or skipped"}
+
+## Checks
+
+| status | board | segment | annotation | syncSource | confidence | bbox | cameraStrategy | zoom | camera | keyframes |
+| --- | --- | --- | --- | --- | ---: | --- | --- | ---: | --- | --- |
+${tableRows.join("\n")}
+
+## Thresholds
+
+- camera zoom warnAbove: ${CAMERA_STRATEGY.zoomWarn}
+- camera zoom maxAllowed: ${CAMERA_STRATEGY.zoomMax}
+- bbox status fails when target bounds exceed the board canvas.
+- keyframes pass only when both start and done frames exist for every action.
+`;
+
+  return {
+    summary,
+    rows,
+    markdown,
+    json: {
+      version: "0.1",
+      generatedAt: new Date().toISOString(),
+      summary,
+      rows,
+      cameraPlan: cameraPlan || null,
+    },
+  };
+}
+
 function buildAcceptanceReport(report) {
   const duration = report.durationCheck;
   const lintWarnings = report.checks?.lint?.stdout?.includes("warning") || report.checks?.lint?.stderr?.includes("warning");
@@ -1534,6 +2012,8 @@ PASS
 - audio/word_timing.json
 - audio/captions.srt
 - sync/action_timing.json
+- sync/camera_plan.json
+- sync/action_camera_qa_report.md
 - video/hyperframes/
 - video/preview.mp4
 - video/keyframes/keyframe_manifest.json
@@ -1552,6 +2032,7 @@ PASS
 - voiceover timing duration: ${duration.timingDuration}s
 - duration delta: ${duration.delta}s
 - keyframe action count: ${report.keyframes.actionCount}
+- action/camera QA: ${report.qa?.status ?? "unknown"} (${report.outputs.actionCameraQa})
 
 ## Alignment Check
 
@@ -1688,12 +2169,18 @@ async function main() {
   writeJson(join(syncDir, "action_timing.json"), syncTimings.actionTiming);
 
   setStep("update combined_motion_plan with measured timing");
-  const updatedMotionPlan = updateCombinedMotionPlan({
+  const timingUpdatedMotionPlan = updateCombinedMotionPlan({
     source,
     timing: audio.timing,
     combinedMotionPlan: boardPackage.combinedMotionPlan,
     actionTimingLookup: syncTimings.lookup,
   });
+  const cameraStrategy = applyCameraStrategy({
+    motionPlan: timingUpdatedMotionPlan,
+    boards: boardPackage.boards,
+  });
+  const updatedMotionPlan = cameraStrategy.motionPlan;
+  writeJson(join(syncDir, "camera_plan.json"), cameraStrategy.cameraPlan);
   const outputBoardRoot = writeOutputBoardPackage({
     projectDir,
     boardRoot,
@@ -1758,6 +2245,19 @@ async function main() {
     }
   }
 
+  setStep("write action and camera QA report");
+  const qaReport = buildActionCameraQa({
+    projectDir,
+    motionPlan: updatedMotionPlan,
+    boards: boardPackage.boards,
+    actionTiming: syncTimings.actionTiming,
+    cameraPlan: cameraStrategy.cameraPlan,
+    keyframeDir,
+    keyframeSummary,
+  });
+  writeJson(join(syncDir, "action_camera_qa_report.json"), qaReport.json);
+  writeFileSync(join(syncDir, "action_camera_qa_report.md"), qaReport.markdown);
+
   const scriptPath = fileURLToPath(import.meta.url);
   const scriptDir = dirname(scriptPath);
   const helpProbe = runCapture("node", [join(scriptDir, "render_whiteboard_project.mjs"), "--help"], scriptDir);
@@ -1791,6 +2291,9 @@ async function main() {
       wordTiming: "audio/word_timing.json",
       captions: "audio/captions.srt",
       actionTiming: "sync/action_timing.json",
+      cameraPlan: "sync/camera_plan.json",
+      actionCameraQa: "sync/action_camera_qa_report.md",
+      actionCameraQaJson: "sync/action_camera_qa_report.json",
       boardPackage: rel(projectDir, outputBoardRoot),
       hyperframes: hfProject.relative,
       preview: existsSync(previewPath) ? rel(projectDir, previewPath) : null,
@@ -1812,12 +2315,20 @@ async function main() {
     segments: updatedMotionPlan.segments.map((segment) => ({
       id: segment.id,
       boardId: segment.boardId,
+      cameraStrategy: segment.cameraStrategy,
       start: segment.start,
       speechEnd: segment.speechEnd,
       end: segment.end,
       actions: (segment.actions || []).length,
     })),
     sync: summarizeSync(syncTimings.actionTiming),
+    camera: {
+      plan: "sync/camera_plan.json",
+      strategies: cameraStrategy.cameraPlan.strategies,
+      zoomThresholds: cameraStrategy.cameraPlan.zoomThresholds,
+      warnings: qaReport.summary.cameraWarnings,
+    },
+    qa: qaReport.summary,
     validation: {
       help: helpProbe.status === 0 ? "pass" : "fail",
       dryRun: dryRunProbe.status === 0 ? "pass" : "fail",

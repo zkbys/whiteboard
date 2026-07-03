@@ -80,6 +80,8 @@ Do not treat older prototype folders or smoke-test runs as the current pipeline.
 - `calibration/*.element_bboxes.json` when model PNG layout needs manual alignment.
 - `audio/word_timing.json`.
 - `sync/action_timing.json`.
+- `sync/camera_plan.json`.
+- `sync/action_camera_qa_report.md`.
 - `board/combined_motion_plan.json` updated with `anchorRatioSource=sync/action_timing.json` where anchors match.
 - `video/hyperframes/` plus `video/preview.mp4`, not MP4 only.
 - `video/keyframes/` for start/done visual QA.

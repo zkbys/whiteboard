@@ -83,6 +83,8 @@ project-output/
 ├── calibration/*.element_bboxes.json
 ├── board_asset_manifest.json
 ├── sync/action_timing.json
+├── sync/camera_plan.json
+├── sync/action_camera_qa_report.md
 ├── board_source_for_e/
 │   ├── board_index.json
 │   ├── combined_motion_plan.json
@@ -92,7 +94,8 @@ project-output/
 │   ├── hyperframes/
 │   ├── preview.mp4
 │   ├── renderer_report.json
-│   └── keyframes/contact_sheet_start_done.jpg
+│   ├── keyframes/contact_sheet_start.jpg
+│   └── keyframes/contact_sheet_done.jpg
 └── integration_report.md
 ```
 
@@ -107,7 +110,7 @@ Use `board_source_for_e/` as D's output that E reads. Do not point E's `--board-
 5. **Manifest**: After the user downloads PNGs, run `write_board_asset_manifest.py` to validate `images/*.model-generated.png` and write `board_asset_manifest.json`.
 6. **Calibration layer**: If the model PNG does not align with D's deterministic control layout, use D's `create_calibration_tool.py` helper or manually create `calibration/<boardId>.element_bboxes.json` with explicit target bboxes before running D.
 7. **D board control package**: Use `hand-drawn-infographic-video-board` with the project package, `board_asset_manifest.json`, and any `calibration/` files to create `board_source_for_e/`.
-8. **E renderer**: Use `whiteboard-infographic-video-renderer` multi-board mode to create narration, measured timing, `audio/word_timing.json`, `sync/action_timing.json`, captions, HyperFrames, preview MP4, and keyframes.
+8. **E renderer**: Use `whiteboard-infographic-video-renderer` multi-board mode to create narration, measured timing, `audio/word_timing.json`, `sync/action_timing.json`, renderer action rhythm, `sync/camera_plan.json`, action/camera QA, captions, HyperFrames, preview MP4, and keyframes.
 9. **Identity check and report**: Run `check_asset_identity.py`, inspect keyframes, and write `integration_report.md`.
 
 ## 人工下载生图资产的固定暂停点
@@ -155,10 +158,10 @@ A run is complete only when all of these are true:
 - C validator passes on `infographic/`.
 - `board_asset_manifest.json` uses `asset.kind=file` for local model PNGs and references `images/*.model-generated.png`.
 - D produces `board_source_for_e/board_index.json`, `combined_motion_plan.json`, and per-board `board_manifest.json`, `annotation_manifest.json`, `motion_plan.json`, and `board.png`.
-- E produces `audio/narration.wav`, `audio/voiceover_timing.json`, `audio/captions.srt`, `video/hyperframes/`, `video/preview.mp4`, `video/keyframes/`, and `video/renderer_report.json`.
+- E produces `audio/narration.wav`, `audio/voiceover_timing.json`, `audio/captions.srt`, `sync/camera_plan.json`, `sync/action_camera_qa_report.md`, `video/hyperframes/`, `video/preview.mp4`, `video/keyframes/`, and `video/renderer_report.json`.
 - HyperFrames lint/validate/inspect have no blocking errors.
 - MP4 duration and measured timing are within E's threshold.
-- `audio/word_timing.json` contains cue token spans, `sync/action_timing.json` exists, and most actions use `anchorRatioSource=sync/action_timing.json`; low-confidence matches are reported instead of hidden.
+- `audio/word_timing.json` contains cue token spans, `sync/action_timing.json` exists, and most actions use `anchorRatioSource=sync/action_timing.json`; low-confidence matches, rhythm compression, bbox issues, camera zoom thresholds, and missing keyframe artifacts are reported instead of hidden.
 - If visual alignment is off, `calibration/<boardId>.element_bboxes.json` exists for the affected board and D reports the calibration file in `calibration_report.md`.
 - `check_asset_identity.py` confirms manifest PNG -> D `board.png` -> HyperFrames `board.png` are identical for every board.
 - `integration_report.md` records pass/fail results, asset source, known degradations, keyframe inspection, and next backfill items.
