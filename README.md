@@ -1,5 +1,7 @@
 # AI Whiteboard Infographic Pipeline
 
+[中文说明](README.zh-CN.md) | English
+
 A modular Codex Skill pipeline for generating reviewable AI whiteboard infographic explainer videos.
 
 The pipeline is designed for staged, human-reviewable production rather than one-shot MP4 generation. It keeps script, semantic board planning, image prompts, model PNG assets, board-control coordinates, measured audio timing, editable HyperFrames output, keyframes, and final acceptance reports as separate artifacts.
