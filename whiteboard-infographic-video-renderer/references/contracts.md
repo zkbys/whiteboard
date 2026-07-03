@@ -210,6 +210,16 @@ The report must cover:
 - camera strategy and zoom threshold status.
 - keyframe manifest and contact-sheet completeness.
 
+## Action / Camera QA Regression
+
+Use this fast regression check after changing multi-board timing, camera, or QA behavior:
+
+```bash
+node whiteboard-infographic-video-renderer/scripts/validate_action_camera_qa.mjs
+```
+
+The script builds a temporary fixture outside the repository, reuses the public `examples/input/board/board.png` fixture, runs `render_multi_board_project.mjs` with `--skip-tts --skip-checks --skip-render`, and asserts the action rhythm, camera plan, renderer report, and action/camera QA fields. A `warn` QA status is acceptable in this smoke path because keyframe extraction is intentionally skipped.
+
 ## HyperFrames Requirements
 
 - Generate a real editable HyperFrames project, not only a rendered MP4.

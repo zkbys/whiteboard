@@ -90,6 +90,16 @@ A current run is complete only when it produces:
 - Passing HyperFrames `lint`, `validate`, and `inspect` checks, allowing only documented non-blocking warnings.
 - Passing model-PNG identity check from `images/` to D `board.png` to HyperFrames board assets.
 
+## Development Validation
+
+Run the repository checks before committing:
+
+```bash
+npm run check
+```
+
+`npm run check` includes a renderer QA smoke test that builds a temporary multi-board fixture outside the repository and verifies `sync/action_timing.json`, `sync/camera_plan.json`, `sync/action_camera_qa_report.md`, and the timing-updated motion plan.
+
 ## Documentation
 
 - [Agent Instructions](AGENTS.md)

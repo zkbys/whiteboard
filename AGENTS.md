@@ -143,5 +143,6 @@ For module-specific changes, also run the closest validator or dry run:
 - C: `python3 ip-hand-drawn-infographic-planner/scripts/validate_infographic_plan.py ip-hand-drawn-infographic-planner/examples/ai-cognition-example`
 - D: `python3 hand-drawn-infographic-video-board/scripts/generate_board_package.py --help`
 - E: `node whiteboard-infographic-video-renderer/scripts/render_multi_board_project.mjs --help`
+- E action/camera QA regression: `npm run check:renderer-qa`
 
 Do not report a pipeline run as successful unless the relevant acceptance artifacts exist and the validation results are recorded.

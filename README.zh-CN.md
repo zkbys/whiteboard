@@ -90,6 +90,16 @@ runs/example-output/images/board-02.model-generated.png
 - HyperFrames `lint`、`validate`、`inspect` 没有阻断错误；非阻断 warning 必须记录。
 - 模型 PNG 从 `images/` 到 D `board.png` 再到 HyperFrames 资产的文件一致性校验通过。
 
+## 开发验证
+
+提交前运行：
+
+```bash
+npm run check
+```
+
+`npm run check` 会包含 renderer QA smoke：在仓库外的系统临时目录构造一个多板 fixture，并验证 `sync/action_timing.json`、`sync/camera_plan.json`、`sync/action_camera_qa_report.md` 和 timing 更新后的 motion plan。
+
 ## 文档
 
 - [新线程/Agent 规则](AGENTS.md)

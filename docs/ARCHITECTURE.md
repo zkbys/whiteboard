@@ -40,6 +40,7 @@ Use the package as current only if these features are present:
 - E writes rhythm metadata into `sync/action_timing.json` and the timing-updated `board/combined_motion_plan.json`.
 - E writes `sync/camera_plan.json` with overview, region, emphasis, and recovery strategies instead of mechanically using each bbox as final framing.
 - E writes `sync/action_camera_qa_report.md` after render or skipped-render validation.
+- E has a fast regression check at `npm run check:renderer-qa` for action rhythm, camera strategy, and QA report fields.
 - E records `anchorRatioSource=sync/action_timing.json` when anchors match.
 - The orchestrator acceptance criteria mention calibration and tokenized sync.
 
