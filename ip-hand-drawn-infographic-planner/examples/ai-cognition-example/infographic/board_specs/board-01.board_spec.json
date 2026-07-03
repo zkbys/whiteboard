@@ -1,0 +1,94 @@
+{
+  "id": "board-01",
+  "title": "AI 的两种用法",
+  "diagramType": "two_panel_comparison",
+  "canvas": {
+    "width": 3400,
+    "height": 1900,
+    "aspectRatio": "16:9"
+  },
+  "style": {
+    "base": [
+      "continuous line art",
+      "engineer's notebook sketch",
+      "whiteboard explanation aesthetic"
+    ],
+    "palette": {
+      "background": "#faf8f3",
+      "primaryLine": "#1a2332",
+      "annotation": "#2d5a7b",
+      "problem": "#e63946",
+      "active": "#4a9d9e"
+    },
+    "colorRule": "Use coral for the wrong mode and teal for the leverage mode; keep the rest charcoal and ocean-blue."
+  },
+  "layout": {
+    "format": "two panels with a narrow center divider",
+    "titleZone": "top, short title only",
+    "leftPanel": {
+      "label": "把 AI 当员工",
+      "mood": "busy and inefficient",
+      "objects": ["intern_mode", "owner_checking"]
+    },
+    "rightPanel": {
+      "label": "把 AI 当杠杆",
+      "mood": "clear and compounding",
+      "objects": ["workflow_asset", "ai_leverage"]
+    },
+    "bottomTakeaway": "不是让 AI 替你做动作，而是放大你的判断"
+  },
+  "keyObjects": [
+    {
+      "id": "intern_mode",
+      "label": "免费实习生",
+      "role": "problem",
+      "visualForm": "small confused assistant icon beside a task pile",
+      "sourceSegments": ["hook"],
+      "annotationIntent": "circle"
+    },
+    {
+      "id": "owner_checking",
+      "label": "你一直盯着",
+      "role": "problem",
+      "visualForm": "operator leaning over many tiny task boxes",
+      "sourceSegments": ["wrong_mode"],
+      "annotationIntent": "underline"
+    },
+    {
+      "id": "workflow_asset",
+      "label": "判断流程",
+      "role": "asset",
+      "visualForm": "simple reusable workflow sheet with three connected blocks",
+      "sourceSegments": ["core_thesis"],
+      "annotationIntent": "box"
+    },
+    {
+      "id": "ai_leverage",
+      "label": "放大十倍",
+      "role": "takeaway",
+      "visualForm": "lever or multiplier mark lifting the workflow sheet",
+      "sourceSegments": ["leverage"],
+      "annotationIntent": "highlight"
+    }
+  ],
+  "relationships": [
+    {
+      "from": "intern_mode",
+      "to": "owner_checking",
+      "kind": "causes",
+      "label": "管理负担"
+    },
+    {
+      "from": "workflow_asset",
+      "to": "ai_leverage",
+      "kind": "amplifies",
+      "label": "判断被放大"
+    }
+  ],
+  "imagePromptPath": "../image_prompts/board-01.prompt.md",
+  "handoff": {
+    "imageGenerationSkill": "hand-drawn-infographic-creator",
+    "controlLayerSkill": "hand-drawn-infographic-video-board",
+    "notes": "This is a semantic board spec. Exact coordinates are created later."
+  }
+}

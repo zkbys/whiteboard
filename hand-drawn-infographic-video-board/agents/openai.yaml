@@ -1,0 +1,4 @@
+interface:
+  display_name: "Hand-Drawn Infographic Video Board"
+  short_description: "Single or multi-board whiteboard control packages"
+  default_prompt: "Use $hand-drawn-infographic-video-board to generate precise single-board or multi-board control packages from my board assets and voiceover segments."

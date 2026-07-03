@@ -1,0 +1,125 @@
+{
+  "topic": "AI 时代个人 IP 内容工作流",
+  "style": "IP孵化/商业认知/AI认知类短视频",
+  "targetDurationSec": 32,
+  "segments": [
+    {
+      "id": "intro",
+      "start": 0,
+      "speechEnd": 4.5,
+      "end": 4.65,
+      "caption": "这张图讲的是，AI 时代的个人 IP 内容工作流。",
+      "boardId": "board-01",
+      "target": "title",
+      "actions": [
+        {
+          "type": "circle",
+          "element": "title",
+          "spokenAnchor": "个人 IP 内容工作流",
+          "anchorRatio": 0.38,
+          "duration": 0.9
+        }
+      ]
+    },
+    {
+      "id": "input-materials",
+      "start": 4.65,
+      "speechEnd": 11.65,
+      "end": 11.8,
+      "caption": "左边先输入材料：成交案例、客户问题、参考视频、人设定位，还有成交路径。",
+      "boardId": "board-01",
+      "target": "inputs",
+      "actions": [
+        {
+          "type": "underline",
+          "element": "inputs",
+          "spokenAnchor": "输入材料",
+          "anchorRatio": 0.12,
+          "duration": 0.75
+        },
+        {
+          "type": "box",
+          "element": "inputs-item-3",
+          "spokenAnchor": "参考视频",
+          "anchorRatio": 0.52,
+          "duration": 0.72
+        }
+      ]
+    },
+    {
+      "id": "workflow-steps",
+      "start": 11.8,
+      "speechEnd": 18.0,
+      "end": 18.18,
+      "caption": "中间这台机器，不是直接写文案，而是先做四步结构化处理。",
+      "boardId": "board-01",
+      "target": "workflow",
+      "actions": [
+        {
+          "type": "circle",
+          "element": "workflow",
+          "spokenAnchor": "四步结构化处理",
+          "anchorRatio": 0.6,
+          "duration": 0.95
+        },
+        {
+          "type": "check",
+          "element": "workflow-item-4",
+          "spokenAnchor": "口播提纲",
+          "anchorRatio": 0.78,
+          "duration": 0.6
+        }
+      ]
+    },
+    {
+      "id": "reference-note",
+      "start": 18.18,
+      "speechEnd": 23.18,
+      "end": 23.36,
+      "caption": "注意这个位置：参考视频只学结构，不照搬内容。",
+      "boardId": "board-01",
+      "target": "reference-structure",
+      "actions": [
+        {
+          "type": "box",
+          "element": "reference-structure",
+          "spokenAnchor": "只学结构",
+          "anchorRatio": 0.42,
+          "duration": 0.72
+        },
+        {
+          "type": "strike",
+          "element": "reference-structure",
+          "spokenAnchor": "不照搬内容",
+          "anchorRatio": 0.68,
+          "duration": 0.58
+        }
+      ]
+    },
+    {
+      "id": "final-deliverables",
+      "start": 23.36,
+      "speechEnd": 31.0,
+      "end": 31.0,
+      "caption": "最后输出知识框架图、讲解提纲、剪辑清单，并沉淀成可复用 Skill。",
+      "boardId": "board-01",
+      "target": "deliverables",
+      "actions": [
+        {
+          "type": "underline",
+          "element": "deliverables",
+          "spokenAnchor": "最终交付",
+          "anchorRatio": 0.08,
+          "duration": 0.72
+        },
+        {
+          "type": "check",
+          "element": "deliverables-item-4",
+          "spokenAnchor": "可复用 Skill",
+          "anchorRatio": 0.78,
+          "duration": 0.6
+        }
+      ]
+    }
+  ]
+}

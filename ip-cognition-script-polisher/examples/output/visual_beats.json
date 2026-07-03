@@ -1,0 +1,80 @@
+{
+  "topic": "AI 工具越多，普通人反而越低效",
+  "visualStyle": "手绘白板信息图；内容简洁；强调工具过载、判断流程、复盘闭环和 IP 资产",
+  "beats": [
+    {
+      "id": "beat-01-tool-overload",
+      "sourceSegmentId": "seg-01-hook",
+      "boardId": "board-01",
+      "priority": 1,
+      "beatType": "warning",
+      "headline": "工具越多，未必越快",
+      "visualIntent": "把一堆 AI 工具画成压住人的负担，直接回应 hook。",
+      "spokenAnchors": ["一堆 AI 工具拖慢"],
+      "keyObjects": [
+        { "id": "tool_pile", "label": "一堆 AI 工具", "role": "problem" },
+        { "id": "slowed_operator", "label": "被拖慢的人", "role": "victim" }
+      ],
+      "annotationSuggestions": [
+        { "type": "circle", "targetObjectId": "tool_pile", "spokenAnchor": "一堆 AI 工具拖慢" }
+      ]
+    },
+    {
+      "id": "beat-02-judgment-loop",
+      "sourceSegmentId": "seg-02-counter",
+      "boardId": "board-01",
+      "priority": 2,
+      "beatType": "contrast",
+      "headline": "插件数量 vs 判断流程",
+      "visualIntent": "用左右对比说明真正差距来自可重复判断，而不是工具列表。",
+      "spokenAnchors": ["判断流程反复跑通"],
+      "keyObjects": [
+        { "id": "plugin_count", "label": "插件最多", "role": "false_metric" },
+        { "id": "judgment_loop", "label": "判断流程", "role": "better_metric" }
+      ],
+      "annotationSuggestions": [
+        { "type": "box", "targetObjectId": "judgment_loop", "spokenAnchor": "判断流程反复跑通" }
+      ]
+    },
+    {
+      "id": "beat-03-weekly-review",
+      "sourceSegmentId": "seg-03-example",
+      "boardId": "board-01",
+      "priority": 3,
+      "beatType": "loop",
+      "headline": "账号周复盘",
+      "visualIntent": "把账号运营例子压缩成一个周复盘循环：内容、转化、下一条。",
+      "spokenAnchors": ["为什么转化", "下一条改哪里"],
+      "keyObjects": [
+        { "id": "content_piece", "label": "这条内容", "role": "input" },
+        { "id": "conversion_reason", "label": "为什么转化", "role": "analysis" },
+        { "id": "next_iteration", "label": "下一条改哪里", "role": "next_action" }
+      ],
+      "annotationSuggestions": [
+        { "type": "underline", "targetObjectId": "conversion_reason", "spokenAnchor": "为什么转化" },
+        { "type": "underline", "targetObjectId": "next_iteration", "spokenAnchor": "下一条改哪里" }
+      ]
+    },
+    {
+      "id": "beat-04-three-step-method",
+      "sourceSegmentId": "seg-05-method",
+      "boardId": "board-01",
+      "priority": 4,
+      "beatType": "checklist",
+      "headline": "三步沉淀方法论",
+      "visualIntent": "用三格 checklist 表达可执行方法，给后续结论留出 IP 资产标题位。",
+      "spokenAnchors": ["找样本", "拆原因", "做复盘"],
+      "keyObjects": [
+        { "id": "find_samples", "label": "找样本", "role": "step" },
+        { "id": "deconstruct_reason", "label": "拆原因", "role": "step" },
+        { "id": "review_loop", "label": "做复盘", "role": "step" },
+        { "id": "ip_asset", "label": "判断力 = IP 资产", "role": "conclusion" }
+      ],
+      "annotationSuggestions": [
+        { "type": "check", "targetObjectId": "find_samples", "spokenAnchor": "找样本" },
+        { "type": "check", "targetObjectId": "deconstruct_reason", "spokenAnchor": "拆原因" },
+        { "type": "check", "targetObjectId": "review_loop", "spokenAnchor": "做复盘" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "canvas": {
+    "width": 2000,
+    "height": 1300
+  },
+  "source_image": "board.png",
+  "elements": [
+    {
+      "id": "title",
+      "kind": "title",
+      "text": "白板视频同步",
+      "bbox": [520, 220, 760, 92],
+      "camera": {
+        "x": 900,
+        "y": 320,
+        "scale": 0.95
+      },
+      "annotations": {
+        "underline_title": {
+          "type": "underline",
+          "underlineStart": [530, 334],
+          "underlineEnd": [1280, 330],
+          "controlPoints": [[680, 348], [920, 316], [1120, 342]],
+          "cursorStart": [530, 318],
+          "cursorEnd": [1280, 314]
+        }
+      }
+    },
+    {
+      "id": "method",
+      "kind": "method_box",
+      "text": "真实时长 -> 批注动作",
+      "bbox": [520, 640, 960, 160],
+      "camera": {
+        "x": 1000,
+        "y": 720,
+        "scale": 0.9
+      },
+      "annotations": {
+        "box_method": {
+          "type": "box",
+          "boxBounds": [500, 620, 1020, 200],
+          "cornerRadius": 28,
+          "cursorStart": [500, 620],
+          "cursorEnd": [1520, 800]
+        }
+      }
+    }
+  ]
+}

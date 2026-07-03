@@ -1,0 +1,12 @@
+{
+  "name": "ai-whiteboard-infographic-pipeline",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "scripts": {
+    "check:python": "python3 -m py_compile ip-cognition-script-polisher/scripts/validate_script_package.py ip-hand-drawn-infographic-planner/scripts/validate_infographic_plan.py hand-drawn-infographic-video-board/scripts/generate_board_package.py hand-drawn-infographic-video-board/scripts/create_calibration_tool.py hand-drawn-infographic-video-board/scripts/extract_annotation_keyframes.py whiteboard-infographic-pipeline-orchestrator/scripts/validate_orchestrator_inputs.py whiteboard-infographic-pipeline-orchestrator/scripts/write_board_asset_manifest.py whiteboard-infographic-pipeline-orchestrator/scripts/check_asset_identity.py",
+    "check:node": "node --check whiteboard-infographic-video-renderer/scripts/render_whiteboard_project.mjs && node --check whiteboard-infographic-video-renderer/scripts/render_multi_board_project.mjs",
+    "check:inputs": "mkdir -p runs && python3 whiteboard-infographic-pipeline-orchestrator/scripts/validate_orchestrator_inputs.py --workspace . --topic-input whiteboard-infographic-pipeline-orchestrator/examples/minimal-topic-input.txt --project-dir runs/example-output",
+    "check": "npm run check:python && npm run check:node && npm run check:inputs"
+  }
+}

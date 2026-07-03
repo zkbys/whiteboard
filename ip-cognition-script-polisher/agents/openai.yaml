@@ -1,0 +1,5 @@
+interface:
+  display_name: "IP Cognition Script Polisher"
+  short_description: "Polish IP cognition scripts into video packages"
+  default_prompt: "Use $ip-cognition-script-polisher to turn this rough IP/business/AI cognition idea into a 30-60 second segmented voiceover package."
+

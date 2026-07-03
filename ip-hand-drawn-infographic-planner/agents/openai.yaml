@@ -1,0 +1,4 @@
+interface:
+  display_name: "IP Hand-Drawn Infographic Planner"
+  short_description: "Plan concise whiteboard infographics"
+  default_prompt: "Use $ip-hand-drawn-infographic-planner to turn polished voiceover and visual_beats into concise hand-drawn infographic plans."

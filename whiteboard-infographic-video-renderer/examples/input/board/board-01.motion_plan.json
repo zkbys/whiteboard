@@ -1,0 +1,61 @@
+{
+  "sync_level": "voiceover-segment-action",
+  "composition": {
+    "width": 1920,
+    "height": 1080,
+    "duration": 8
+  },
+  "overview_camera": {
+    "x": 1000,
+    "y": 650,
+    "scale": 0.72
+  },
+  "segments": [
+    {
+      "id": "hook",
+      "start": 0,
+      "speechEnd": 3.5,
+      "end": 3.62,
+      "caption": "做白板视频，最怕的是画面和口播不同步。",
+      "target": "title",
+      "camera": {
+        "x": 900,
+        "y": 320,
+        "scale": 0.95
+      },
+      "actions": [
+        {
+          "type": "underline",
+          "element": "title",
+          "annotation": "underline_title",
+          "spokenAnchor": "不同步",
+          "offset": 1.8,
+          "duration": 0.72
+        }
+      ]
+    },
+    {
+      "id": "method",
+      "start": 3.62,
+      "speechEnd": 8,
+      "end": 8,
+      "caption": "先测真实音频时长，再把每个批注动作压到句子里面。",
+      "target": "method",
+      "camera": {
+        "x": 1000,
+        "y": 720,
+        "scale": 0.9
+      },
+      "actions": [
+        {
+          "type": "box",
+          "element": "method",
+          "annotation": "box_method",
+          "spokenAnchor": "真实音频时长",
+          "offset": 1.4,
+          "duration": 0.8
+        }
+      ]
+    }
+  ]
+}

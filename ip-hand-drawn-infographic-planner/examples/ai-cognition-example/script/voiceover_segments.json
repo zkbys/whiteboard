@@ -1,0 +1,63 @@
+{
+  "topic": "AI 不是员工，是杠杆",
+  "style": "IP孵化/商业认知/AI认知类短视频",
+  "targetDurationSec": 48,
+  "segments": [
+    {
+      "id": "hook",
+      "role": "hook",
+      "text": "很多人用 AI 的方式，像是在招聘一个免费的实习生。",
+      "caption": "很多人用 AI 的方式，像是在招聘一个免费的实习生。",
+      "visualIntent": "用错误类比制造反差",
+      "spokenAnchors": ["免费的实习生"]
+    },
+    {
+      "id": "wrong_mode",
+      "role": "problem",
+      "text": "他们让 AI 写文案、做表格、改 PPT，但每一步都要自己盯着，最后只是多了一个需要管理的人。",
+      "caption": "每一步都要自己盯着，AI 反而变成管理负担。",
+      "visualIntent": "呈现盯 AI 的低效模式",
+      "spokenAnchors": ["每一步都要自己盯着", "需要管理的人"]
+    },
+    {
+      "id": "core_thesis",
+      "role": "thesis",
+      "text": "真正的差距不是谁提示词更长，而是谁先把判断标准沉淀成流程。",
+      "caption": "差距不是提示词更长，而是判断标准能否沉淀。",
+      "visualIntent": "把核心观点压成一个机制图",
+      "spokenAnchors": ["判断标准", "沉淀成流程"]
+    },
+    {
+      "id": "example",
+      "role": "example",
+      "text": "同样做客户案例拆解，新手一条条问，高手先定义输入、评分标准和输出模板。",
+      "caption": "高手先定义输入、评分标准和输出模板。",
+      "visualIntent": "用案例拆解说明流程资产",
+      "spokenAnchors": ["输入", "评分标准", "输出模板"]
+    },
+    {
+      "id": "leverage",
+      "role": "turn",
+      "text": "这时候 AI 才不是员工，而是把你的判断放大十倍的杠杆。",
+      "caption": "AI 不是员工，是放大判断的杠杆。",
+      "visualIntent": "强调员工模式到杠杆模式的转变",
+      "spokenAnchors": ["不是员工", "杠杆"]
+    },
+    {
+      "id": "method",
+      "role": "method",
+      "text": "所以先问三件事：判断标准是什么，输入能不能标准化，结果能不能复用。",
+      "caption": "先问三件事：标准、输入、复用。",
+      "visualIntent": "形成三问检查清单",
+      "spokenAnchors": ["判断标准", "输入", "复用"]
+    },
+    {
+      "id": "conclusion",
+      "role": "conclusion",
+      "text": "别急着自动化动作，先自动化判断。",
+      "caption": "别急着自动化动作，先自动化判断。",
+      "visualIntent": "收束成一句可传播结论",
+      "spokenAnchors": ["自动化判断"]
+    }
+  ]
+}

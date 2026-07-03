@@ -1,0 +1,64 @@
+{
+  "id": "board-01",
+  "title": "AI 时代个人 IP 内容工作流",
+  "subtitle": "把一次内容生产变成可复用系统",
+  "audience": "商业认知短视频观众",
+  "layout": "three_column_flow",
+  "sections": [
+    {
+      "id": "inputs",
+      "title": "输入材料",
+      "items": [
+        "成交案例",
+        "客户问题",
+        "参考视频",
+        "人设定位",
+        "成交路径"
+      ],
+      "actions": [
+        "underline",
+        "box"
+      ]
+    },
+    {
+      "id": "workflow",
+      "title": "AI 内容工作流",
+      "items": [
+        "定位标签",
+        "痛点梳理",
+        "选题池",
+        "口播提纲"
+      ],
+      "actions": [
+        "circle",
+        "check"
+      ]
+    },
+    {
+      "id": "deliverables",
+      "title": "最终交付",
+      "items": [
+        "知识框架图",
+        "讲解提纲",
+        "剪辑清单",
+        "可沉淀 Skill"
+      ],
+      "actions": [
+        "underline",
+        "strike",
+        "check"
+      ]
+    }
+  ],
+  "notes": [
+    {
+      "id": "reference-structure",
+      "text": "参考视频只学结构",
+      "target_section": "workflow",
+      "actions": [
+        "box",
+        "circle"
+      ]
+    }
+  ]
+}

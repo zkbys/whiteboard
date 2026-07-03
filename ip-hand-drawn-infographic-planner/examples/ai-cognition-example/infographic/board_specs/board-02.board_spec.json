@@ -1,0 +1,100 @@
+{
+  "id": "board-02",
+  "title": "先自动化判断",
+  "diagramType": "checklist_flow",
+  "canvas": {
+    "width": 3400,
+    "height": 1900,
+    "aspectRatio": "16:9"
+  },
+  "style": {
+    "base": [
+      "continuous line art",
+      "engineer's notebook sketch",
+      "whiteboard explanation aesthetic"
+    ],
+    "palette": {
+      "background": "#faf8f3",
+      "primaryLine": "#1a2332",
+      "annotation": "#2d5a7b",
+      "active": "#4a9d9e",
+      "insight": "#f4a261"
+    },
+    "colorRule": "Use amber for decision insight and teal for reusable output; keep labels sparse."
+  },
+  "layout": {
+    "format": "three-step checklist flowing into one takeaway",
+    "titleZone": "top, short title only",
+    "mainFlow": [
+      "judgment_standard",
+      "standard_input",
+      "reusable_output"
+    ],
+    "takeawayZone": "bottom or right-side emphasis, one short sentence",
+    "marginNotes": [
+      "标准先行",
+      "输入统一",
+      "结果复用"
+    ]
+  },
+  "keyObjects": [
+    {
+      "id": "judgment_standard",
+      "label": "判断标准",
+      "role": "standard",
+      "visualForm": "checklist card with a hand-drawn check mark",
+      "sourceSegments": ["example", "method"],
+      "annotationIntent": "check"
+    },
+    {
+      "id": "standard_input",
+      "label": "标准输入",
+      "role": "standard",
+      "visualForm": "input tray with three aligned documents",
+      "sourceSegments": ["example", "method"],
+      "annotationIntent": "underline"
+    },
+    {
+      "id": "reusable_output",
+      "label": "可复用结果",
+      "role": "asset",
+      "visualForm": "template stack or saved workflow block",
+      "sourceSegments": ["example", "method"],
+      "annotationIntent": "box"
+    },
+    {
+      "id": "decision_first",
+      "label": "先自动化判断",
+      "role": "takeaway",
+      "visualForm": "bold bottom takeaway with amber emphasis",
+      "sourceSegments": ["conclusion"],
+      "annotationIntent": "highlight"
+    }
+  ],
+  "relationships": [
+    {
+      "from": "judgment_standard",
+      "to": "standard_input",
+      "kind": "enables",
+      "label": "约束输入"
+    },
+    {
+      "from": "standard_input",
+      "to": "reusable_output",
+      "kind": "produces",
+      "label": "稳定产出"
+    },
+    {
+      "from": "reusable_output",
+      "to": "decision_first",
+      "kind": "supports",
+      "label": "判断可自动化"
+    }
+  ],
+  "imagePromptPath": "../image_prompts/board-02.prompt.md",
+  "handoff": {
+    "imageGenerationSkill": "hand-drawn-infographic-creator",
+    "controlLayerSkill": "hand-drawn-infographic-video-board",
+    "notes": "This spec intentionally avoids bbox, camera, cursor, and annotation coordinates."
+  }
+}

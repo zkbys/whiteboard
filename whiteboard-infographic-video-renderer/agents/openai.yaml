@@ -1,0 +1,4 @@
+interface:
+  display_name: "Whiteboard Infographic Video Renderer"
+  short_description: "Render synced whiteboard HyperFrames videos"
+  default_prompt: "Use $whiteboard-infographic-video-renderer to render a board package into a HyperFrames project, AI voiceover, subtitles, preview MP4, and action keyframes."

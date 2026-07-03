@@ -1,0 +1,80 @@
+{
+  "topic": "AI 工具越多，普通人反而越低效",
+  "style": "IP孵化/商业认知/AI认知类短视频",
+  "targetDurationSec": 45,
+  "estimatedDurationSec": 41.0,
+  "segments": [
+    {
+      "id": "seg-01-hook",
+      "role": "hook",
+      "text": "很多人不是被 AI 淘汰的，是被自己收藏的一堆 AI 工具拖慢的。",
+      "caption": "很多人不是被 AI 淘汰的，是被自己收藏的一堆 AI 工具拖慢的。",
+      "visualIntent": "用一堆 AI 工具压住人物的画面，建立工具过载的反差钩子。",
+      "spokenAnchors": ["一堆 AI 工具拖慢"],
+      "boardId": "board-01",
+      "targetElement": "tool_overload_title",
+      "targetDurationSec": 5.7,
+      "pauseAfter": 0.18
+    },
+    {
+      "id": "seg-02-counter",
+      "role": "反常识",
+      "text": "真正拉开差距的，不是谁插件最多，而是谁能把一个判断流程反复跑通。",
+      "caption": "真正拉开差距的，不是谁插件最多，而是谁能把一个判断流程反复跑通。",
+      "visualIntent": "把工具数量和判断流程做左右对比，强调差距来自流程复利。",
+      "spokenAnchors": ["判断流程反复跑通"],
+      "boardId": "board-01",
+      "targetElement": "judgment_loop",
+      "targetDurationSec": 6.2,
+      "pauseAfter": 0.18
+    },
+    {
+      "id": "seg-03-example",
+      "role": "例子",
+      "text": "比如做一个账号，不缺写标题的工具、剪视频的工具，缺的是你每周固定判断：这条内容为什么转化，下一条改哪里。",
+      "caption": "比如做一个账号，不缺写标题的工具、剪视频的工具，缺的是你每周固定判断：这条内容为什么转化，下一条改哪里。",
+      "visualIntent": "用账号运营周复盘小流程呈现例子，不把画面塞满工具名称。",
+      "spokenAnchors": ["为什么转化", "下一条改哪里"],
+      "boardId": "board-01",
+      "targetElement": "weekly_review",
+      "targetDurationSec": 9.8,
+      "pauseAfter": 0.18
+    },
+    {
+      "id": "seg-04-turn",
+      "role": "转折",
+      "text": "所以问题不在工具，而在你有没有一套可复用的生意判断。",
+      "caption": "所以问题不在工具，而在你有没有一套可复用的生意判断。",
+      "visualIntent": "从工具箱画面转到生意判断框，完成观点收束。",
+      "spokenAnchors": ["可复用的生意判断"],
+      "boardId": "board-01",
+      "targetElement": "business_judgment",
+      "targetDurationSec": 5.2,
+      "pauseAfter": 0.2
+    },
+    {
+      "id": "seg-05-method",
+      "role": "方法",
+      "text": "先把目标写成一句话，再固定三个动作：找样本、拆原因、做复盘。工具只负责加速这三个动作。",
+      "caption": "先把目标写成一句话，再固定三个动作：找样本、拆原因、做复盘。工具只负责加速这三个动作。",
+      "visualIntent": "画出目标到三步动作的闭环，让方法可被白板复用。",
+      "spokenAnchors": ["找样本", "拆原因", "做复盘"],
+      "boardId": "board-01",
+      "targetElement": "three_step_method",
+      "targetDurationSec": 7.9,
+      "pauseAfter": 0.18
+    },
+    {
+      "id": "seg-06-conclusion",
+      "role": "结论",
+      "text": "AI 时代别炫工具箱，要沉淀方法论。工具会换，判断力才是你的 IP 资产。",
+      "caption": "AI 时代别炫工具箱，要沉淀方法论。工具会换，判断力才是你的 IP 资产。",
+      "visualIntent": "用最终大标题把工具箱和 IP 资产做价值排序。",
+      "spokenAnchors": ["判断力才是你的 IP 资产"],
+      "boardId": "board-01",
+      "targetElement": "ip_asset",
+      "targetDurationSec": 6.2,
+      "pauseAfter": 0
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "engine": "edge-tts",
+  "voice": {
+    "name": "zh-CN-YunxiNeural",
+    "rate": "+14%",
+    "pitch": "+0Hz",
+    "volume": "+0%"
+  },
+  "composition": {
+    "width": 1920,
+    "height": 1080
+  },
+  "overview_camera": {
+    "x": 1000,
+    "y": 650,
+    "scale": 0.72
+  },
+  "segments": [
+    {
+      "id": "hook",
+      "text": "做白板视频，最怕的是画面和口播不同步。",
+      "caption": "做白板视频，最怕的是画面和口播不同步。",
+      "target": "title",
+      "camera": {
+        "x": 900,
+        "y": 320,
+        "scale": 0.95
+      },
+      "pauseAfter": 0.12,
+      "actions": [
+        {
+          "type": "underline",
+          "element": "title",
+          "annotation": "underline_title",
+          "spokenAnchor": "不同步",
+          "anchorRatio": 0.55,
+          "duration": 0.72
+        }
+      ]
+    },
+    {
+      "id": "method",
+      "text": "先测真实音频时长，再把每个批注动作压到句子里面。",
+      "caption": "先测真实音频时长，再把每个批注动作压到句子里面。",
+      "target": "method",
+      "camera": {
+        "x": 1000,
+        "y": 720,
+        "scale": 0.9
+      },
+      "pauseAfter": 0,
+      "actions": [
+        {
+          "type": "box",
+          "element": "method",
+          "annotation": "box_method",
+          "spokenAnchor": "真实音频时长",
+          "anchorRatio": 0.32,
+          "duration": 0.8
+        }
+      ]
+    }
+  ]
+}

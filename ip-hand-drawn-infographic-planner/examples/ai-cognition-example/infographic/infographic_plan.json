@@ -1,0 +1,67 @@
+{
+  "version": "0.1",
+  "source": {
+    "polishedVoiceoverPath": "script/polished_voiceover.md",
+    "voiceoverSegmentsPath": "script/voiceover_segments.json",
+    "visualBeatsPath": "script/visual_beats.json"
+  },
+  "boardDecision": {
+    "boardCount": 2,
+    "reason": "口播有两个清晰任务：先纠正把 AI 当员工的误读，再给出可复用的三问判断法。拆成两张图能避免把对比和清单挤在同一画面里。",
+    "splitRule": "board-01 covers hook/wrong_mode/core_thesis/leverage; board-02 covers example/method/conclusion"
+  },
+  "styleBridge": {
+    "baseSkill": "hand-drawn-infographic-creator",
+    "styleTerms": [
+      "continuous line art",
+      "engineer's notebook sketch with annotations in margins",
+      "whiteboard explanation aesthetic",
+      "ink on parchment"
+    ],
+    "palette": {
+      "background": "#faf8f3",
+      "primaryLine": "#1a2332",
+      "annotation": "#2d5a7b",
+      "problem": "#e63946",
+      "active": "#4a9d9e",
+      "insight": "#f4a261"
+    },
+    "promptRequiredSentence": "内容简洁一点，不要逐字写满口播"
+  },
+  "boards": [
+    {
+      "id": "board-01",
+      "title": "AI 的两种用法",
+      "purpose": "用左右对比解释为什么把 AI 当员工会增加管理负担，而把判断沉淀成流程才会形成杠杆。",
+      "contentDensity": "simple",
+      "maxKeyObjects": 4,
+      "sourceSegments": ["hook", "wrong_mode", "core_thesis", "leverage"],
+      "diagramType": "two_panel_comparison",
+      "keyObjects": [
+        { "id": "intern_mode", "label": "免费实习生", "role": "problem" },
+        { "id": "owner_checking", "label": "你一直盯着", "role": "problem" },
+        { "id": "workflow_asset", "label": "判断流程", "role": "asset" },
+        { "id": "ai_leverage", "label": "放大十倍", "role": "takeaway" }
+      ],
+      "imagePromptPath": "infographic/image_prompts/board-01.prompt.md",
+      "boardSpecPath": "infographic/board_specs/board-01.board_spec.json"
+    },
+    {
+      "id": "board-02",
+      "title": "先自动化判断",
+      "purpose": "把方法压缩成三问检查清单，指导观众先定义判断再做自动化。",
+      "contentDensity": "simple",
+      "maxKeyObjects": 4,
+      "sourceSegments": ["example", "method", "conclusion"],
+      "diagramType": "checklist_flow",
+      "keyObjects": [
+        { "id": "judgment_standard", "label": "判断标准", "role": "standard" },
+        { "id": "standard_input", "label": "标准输入", "role": "standard" },
+        { "id": "reusable_output", "label": "可复用结果", "role": "asset" },
+        { "id": "decision_first", "label": "先自动化判断", "role": "takeaway" }
+      ],
+      "imagePromptPath": "infographic/image_prompts/board-02.prompt.md",
+      "boardSpecPath": "infographic/board_specs/board-02.board_spec.json"
+    }
+  ]
+}

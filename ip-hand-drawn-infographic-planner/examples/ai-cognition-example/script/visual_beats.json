@@ -1,0 +1,26 @@
+{
+  "topic": "AI 不是员工，是杠杆",
+  "beats": [
+    {
+      "id": "beat_intern_metaphor",
+      "sourceSegments": ["hook", "wrong_mode"],
+      "visualIntent": "错误用法：把 AI 当免费实习生",
+      "keyPoint": "AI 被当成要盯着的人",
+      "suggestedDiagramType": "two_panel_comparison"
+    },
+    {
+      "id": "beat_workflow_asset",
+      "sourceSegments": ["core_thesis", "example", "leverage"],
+      "visualIntent": "正确用法：判断标准沉淀为流程资产",
+      "keyPoint": "流程资产放大判断",
+      "suggestedDiagramType": "comparison"
+    },
+    {
+      "id": "beat_three_questions",
+      "sourceSegments": ["method", "conclusion"],
+      "visualIntent": "把方法变成三问清单",
+      "keyPoint": "先自动化判断，再自动化动作",
+      "suggestedDiagramType": "checklist_flow"
+    }
+  ]
+}
