@@ -92,6 +92,9 @@ A current run is complete only when it produces:
 
 ## Documentation
 
+- [Agent Instructions](AGENTS.md)
+- [Contributing](CONTRIBUTING.md)
+- [Project Structure](docs/PROJECT_STRUCTURE.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Version Audit](docs/VERSION_AUDIT.md)
 - [Open Source Checklist](docs/OPEN_SOURCE_CHECKLIST.md)

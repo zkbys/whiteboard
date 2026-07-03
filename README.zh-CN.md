@@ -92,6 +92,9 @@ runs/example-output/images/board-02.model-generated.png
 
 ## 文档
 
+- [新线程/Agent 规则](AGENTS.md)
+- [贡献与推送流程](CONTRIBUTING.md)
+- [项目结构](docs/PROJECT_STRUCTURE.md)
 - [架构说明](docs/ARCHITECTURE.md)
 - [版本判定](docs/VERSION_AUDIT.md)
 - [开源检查清单](docs/OPEN_SOURCE_CHECKLIST.md)
