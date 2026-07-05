@@ -100,6 +100,14 @@ npm run check
 
 `npm run check` 会包含 renderer QA smoke：在仓库外的系统临时目录构造一个多板 fixture，并验证 `sync/action_timing.json`、`sync/camera_plan.json`、`sync/action_camera_qa_report.md` 和 timing 更新后的 motion plan。
 
+如果要做更慢但更接近真实验收的 E 阶段检查，可运行：
+
+```bash
+npm run check:renderer-real
+```
+
+它会在临时目录里使用确定性的 fixture timing/audio，执行 HyperFrames 检查、MP4 渲染和 action keyframe 抽取，成功后删除生成媒体。
+
 ## 文档
 
 - [新线程/Agent 规则](AGENTS.md)

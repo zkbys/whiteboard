@@ -84,6 +84,7 @@ Rules:
 - The QA report must cover sync source, fallback/low-source actions, rhythm compression, bbox boundary status, camera zoom threshold status, and keyframe artifact completeness.
 - If render or keyframe extraction is intentionally skipped, the QA report should still be written and mark keyframes as skipped.
 - Use `node scripts/validate_action_camera_qa.mjs` for a fast regression check of action rhythm, camera strategy, and QA report generation without TTS, HyperFrames checks, or MP4 rendering.
+- Use `node scripts/validate_action_camera_qa.mjs --real-render --quality draft --fps 8` when you need a slower renderer regression that reuses deterministic fixture timing/audio, runs HyperFrames checks, renders MP4, extracts keyframes, and validates contact sheets.
 
 ## Renderer Script
 
@@ -135,4 +136,10 @@ Run the renderer action/camera QA smoke:
 
 ```bash
 node scripts/validate_action_camera_qa.mjs
+```
+
+Run the optional real-render regression:
+
+```bash
+node scripts/validate_action_camera_qa.mjs --real-render --quality draft --fps 8
 ```

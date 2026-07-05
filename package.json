@@ -8,6 +8,7 @@
     "check:node": "node --check whiteboard-infographic-video-renderer/scripts/render_whiteboard_project.mjs && node --check whiteboard-infographic-video-renderer/scripts/render_multi_board_project.mjs && node --check whiteboard-infographic-video-renderer/scripts/validate_action_camera_qa.mjs",
     "check:inputs": "mkdir -p runs && python3 whiteboard-infographic-pipeline-orchestrator/scripts/validate_orchestrator_inputs.py --workspace . --topic-input whiteboard-infographic-pipeline-orchestrator/examples/minimal-topic-input.txt --project-dir runs/example-output",
     "check:renderer-qa": "node whiteboard-infographic-video-renderer/scripts/validate_action_camera_qa.mjs",
+    "check:renderer-real": "node whiteboard-infographic-video-renderer/scripts/validate_action_camera_qa.mjs --real-render --quality draft --fps 8",
     "check": "npm run check:python && npm run check:node && npm run check:inputs && npm run check:renderer-qa"
   }
 }

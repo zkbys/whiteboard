@@ -220,6 +220,14 @@ node whiteboard-infographic-video-renderer/scripts/validate_action_camera_qa.mjs
 
 The script builds a temporary fixture outside the repository, reuses the public `examples/input/board/board.png` fixture, runs `render_multi_board_project.mjs` with `--skip-tts --skip-checks --skip-render`, and asserts the action rhythm, camera plan, renderer report, and action/camera QA fields. A `warn` QA status is acceptable in this smoke path because keyframe extraction is intentionally skipped.
 
+For slower real-render regression:
+
+```bash
+node whiteboard-infographic-video-renderer/scripts/validate_action_camera_qa.mjs --real-render --quality draft --fps 8
+```
+
+This mode uses the same temporary fixture with deterministic fixture timing/audio, then runs HyperFrames lint/validate/inspect, MP4 rendering, and action keyframe extraction. It additionally asserts `video/preview.mp4`, `video/keyframes/keyframe_manifest.json`, `contact_sheet_start.jpg`, `contact_sheet_done.jpg`, and zero QA keyframe issues. Generated media stays in the temp directory only when `--keep-temp` is passed or the run fails.
+
 ## HyperFrames Requirements
 
 - Generate a real editable HyperFrames project, not only a rendered MP4.

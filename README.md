@@ -100,6 +100,14 @@ npm run check
 
 `npm run check` includes a renderer QA smoke test that builds a temporary multi-board fixture outside the repository and verifies `sync/action_timing.json`, `sync/camera_plan.json`, `sync/action_camera_qa_report.md`, and the timing-updated motion plan.
 
+For slower renderer verification with deterministic fixture timing/audio, HyperFrames checks, MP4 rendering, and action keyframe extraction:
+
+```bash
+npm run check:renderer-real
+```
+
+This also runs in a temporary directory and removes generated media on success.
+
 ## Documentation
 
 - [Agent Instructions](AGENTS.md)
