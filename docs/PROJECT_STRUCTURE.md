@@ -31,6 +31,7 @@ This repository contains the current public AI whiteboard infographic pipeline. 
 | --- | --- |
 | `docs/ARCHITECTURE.md` | Pipeline architecture and contract boundaries. |
 | `docs/VERSION_AUDIT.md` | Why this package is the latest baseline and which old versions are excluded. |
+| `docs/REAL_E2E_SAMPLE.md` | Latest local real end-to-end sample summary; generated media remains ignored. |
 | `docs/OPEN_SOURCE_CHECKLIST.md` | Publishing safety checklist. |
 | `whiteboard-infographic-pipeline-orchestrator/references/runbook.md` | End-to-end execution runbook. |
 | `whiteboard-infographic-pipeline-orchestrator/references/contracts.md` | Cross-module package contract. |

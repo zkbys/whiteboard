@@ -9,8 +9,8 @@ This package was assembled from the latest usable local pipeline state.
 | Orchestrator | `whiteboard-infographic-pipeline-orchestrator/SKILL.md`, `references/runbook.md` | Includes manual image handoff, calibration, word timing, action timing, and identity checks. |
 | D board control | `hand-drawn-infographic-video-board/scripts/generate_board_package.py` and `create_calibration_tool.py` | Supports `calibration/<boardId>.element_bboxes.json` and fixes duplicate-title behavior after calibration. |
 | E renderer | `whiteboard-infographic-video-renderer/scripts/render_multi_board_project.mjs` and `validate_action_camera_qa.mjs` | Generates `audio/word_timing.json`, `sync/action_timing.json`, renderer action rhythm metadata, `sync/camera_plan.json`, and action/camera QA reports, with a fast regression check. |
-| Integration proof | `optimization-sync-calibration-test/CALIBRATED_RERENDER_REPORT.md` | Latest acceptance checkpoint after manual calibration JSON was supplied. |
-| Natural-language orchestration proof | `orchestrator-runs/20260619-1125-ai-tools-overload/integration_report.md` | Latest one-command orchestrator run proof, but it predates the full calibration polish. |
+| Integration proof | `docs/REAL_E2E_SAMPLE.md` | Latest local real end-to-end sample after action rhythm, camera strategy, and action/camera QA optimization. |
+| Natural-language orchestration proof | `orchestrator-runs/20260619-1125-ai-tools-overload/integration_report.md` | Useful earlier one-command orchestrator run proof, but it predates the current renderer QA and camera strategy layer. |
 
 ## Excluded Old Versions
 
@@ -24,16 +24,27 @@ Do not publish these as the active implementation:
 
 ## Current Acceptance Snapshot
 
-The latest calibrated rerender checkpoint passed with:
+The latest real end-to-end local sample is recorded in `docs/REAL_E2E_SAMPLE.md`. Its generated media remains in ignored local run output:
 
-- 3 boards.
+```text
+orchestrator-runs/20260705-action-camera-real-e2e
+```
+
+The final sample passed with:
+
+- 2 boards.
 - 6 voiceover segments.
-- 10 annotation actions.
-- Manual calibration JSON consumed by D for all boards.
+- 9 annotation actions.
+- Real model-generated board PNGs copied into `images/`.
+- Manual calibration JSON consumed by D for both boards.
 - `audio/word_timing.json` with cue-tokenized timing.
-- `sync/action_timing.json` with 10 matched actions, 0 fallbacks, average confidence 0.9.
-- Rendered duration 43.821s, timing duration 43.780s, delta 0.041s.
+- `sync/action_timing.json` with 9 matched actions, 0 fallbacks, average confidence 0.9.
+- `sync/camera_plan.json` with overview, emphasis, and recovery segment strategies, plus region focus inside overview/recovery planning.
+- `sync/action_camera_qa_report.json` status `pass`: 0 rhythm compressions, 0 bbox issues, 0 camera warnings, 0 keyframe issues.
+- Rendered duration 42.581333s, timing duration 42.536s, delta 0.045s.
 - HyperFrames validate and inspect passing.
+- Keyframe manifest and start/done contact sheets present.
+- Asset identity passing from `images/` to D `board.png` to HyperFrames assets.
 
 The remaining non-blocking warnings are font mapping and large generated composition size.
 

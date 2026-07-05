@@ -123,6 +123,7 @@ Use adversarial review after both `npm run check` and `npm run check:renderer-re
 - [Project Structure](docs/PROJECT_STRUCTURE.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Version Audit](docs/VERSION_AUDIT.md)
+- [Real End-to-End Sample](docs/REAL_E2E_SAMPLE.md)
 - [Open Source Checklist](docs/OPEN_SOURCE_CHECKLIST.md)
 - [Orchestrator Runbook](whiteboard-infographic-pipeline-orchestrator/references/runbook.md)
 - [Pipeline Contracts](whiteboard-infographic-pipeline-orchestrator/references/contracts.md)

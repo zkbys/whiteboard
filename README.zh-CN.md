@@ -123,6 +123,7 @@ npm run check:renderer-real
 - [项目结构](docs/PROJECT_STRUCTURE.md)
 - [架构说明](docs/ARCHITECTURE.md)
 - [版本判定](docs/VERSION_AUDIT.md)
+- [真实端到端样例](docs/REAL_E2E_SAMPLE.md)
 - [开源检查清单](docs/OPEN_SOURCE_CHECKLIST.md)
 - [总编排运行手册](whiteboard-infographic-pipeline-orchestrator/references/runbook.md)
 - [流水线契约](whiteboard-infographic-pipeline-orchestrator/references/contracts.md)
