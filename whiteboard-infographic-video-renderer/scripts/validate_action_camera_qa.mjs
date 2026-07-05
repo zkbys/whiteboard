@@ -21,6 +21,8 @@ function parseArgs(argv) {
       out.keepTemp = true;
     } else if (token === "--real-render") {
       out.realRender = true;
+    } else if (token === "--adversarial") {
+      out.adversarial = true;
     } else if (token === "--quality") {
       if (!argv[i + 1] || argv[i + 1].startsWith("--")) fail("--quality requires a value");
       out.quality = argv[i + 1];
@@ -47,11 +49,16 @@ function parseArgs(argv) {
 function usage() {
   return `Usage:
   node whiteboard-infographic-video-renderer/scripts/validate_action_camera_qa.mjs [--keep-temp]
+  node whiteboard-infographic-video-renderer/scripts/validate_action_camera_qa.mjs --adversarial [--keep-temp]
   node whiteboard-infographic-video-renderer/scripts/validate_action_camera_qa.mjs --real-render [--quality draft] [--fps 8] [--keep-temp]
 
 Builds a temporary multi-board renderer fixture, runs render_multi_board_project.mjs
 with --skip-tts --skip-checks --skip-render by default, and verifies action
 rhythm, camera strategy, and action/camera QA outputs.
+
+With --adversarial, the script mutates the fixture with an unmatched spoken
+anchor, out-of-bounds bbox, camera zoom pressure, and skipped keyframes, then
+asserts the QA report catches those problems.
 
 With --real-render, the script reuses deterministic fixture timing with a local
 silent WAV, then runs HyperFrames checks, MP4 rendering, and action keyframe
@@ -92,6 +99,12 @@ function assertNumber(value, label) {
   assert(Number.isFinite(Number(value)), `${label} must be numeric`);
 }
 
+function formatSeconds(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return 0;
+  return Number(number.toFixed(3));
+}
+
 function cloneJson(value) {
   return JSON.parse(JSON.stringify(value));
 }
@@ -118,6 +131,31 @@ function buildAnnotationManifest(manifest) {
 }
 
 function fixtureTiming(source) {
+  if ((source.segments || []).length === 3) {
+    const schedule = [
+      { start: 0, speechEnd: 2.2, end: 2.32 },
+      { start: 2.32, speechEnd: 5.2, end: 5.32 },
+      { start: 5.32, speechEnd: 8, end: 8 },
+    ];
+    return {
+      engine: "fixture",
+      totalDuration: 8,
+      segments: source.segments.map((segment, index) => {
+        const timing = schedule[index];
+        return {
+          id: segment.id,
+          text: segment.text,
+          caption: segment.caption,
+          start: timing.start,
+          speechEnd: timing.speechEnd,
+          end: timing.end,
+          speechDuration: formatSeconds(timing.speechEnd - timing.start),
+          media: { subtitles: subtitlePathFor(index, segment) },
+          actions: segment.actions,
+        };
+      }),
+    };
+  }
   return {
     engine: "fixture",
     totalDuration: 8,
@@ -130,7 +168,7 @@ function fixtureTiming(source) {
         speechEnd: 3.5,
         end: 3.62,
         speechDuration: 3.5,
-        media: { subtitles: "audio/segments/01-hook.vtt" },
+        media: { subtitles: subtitlePathFor(0, source.segments[0]) },
         actions: source.segments[0].actions,
       },
       {
@@ -141,11 +179,39 @@ function fixtureTiming(source) {
         speechEnd: 8,
         end: 8,
         speechDuration: 4.38,
-        media: { subtitles: "audio/segments/02-method.vtt" },
+        media: { subtitles: subtitlePathFor(1, source.segments[1]) },
         actions: source.segments[1].actions,
       },
     ],
   };
+}
+
+function formatVttTime(seconds) {
+  const totalMillis = Math.max(0, Math.round((Number(seconds) || 0) * 1000));
+  const hours = Math.floor(totalMillis / 3600000);
+  const minutes = Math.floor((totalMillis % 3600000) / 60000);
+  const wholeSeconds = Math.floor((totalMillis % 60000) / 1000);
+  const millis = totalMillis % 1000;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(wholeSeconds).padStart(2, "0")}.${String(millis).padStart(3, "0")}`;
+}
+
+function cleanId(value) {
+  return String(value || "segment").replace(/[^a-z0-9_-]/gi, "-").replace(/-+/g, "-");
+}
+
+function subtitlePathFor(index, segment) {
+  return `audio/segments/${String(index + 1).padStart(2, "0")}-${cleanId(segment?.id)}.vtt`;
+}
+
+function writeFixtureSubtitles(projectDir, timing) {
+  for (const [index, segment] of (timing.segments || []).entries()) {
+    const text = segment.text || segment.caption || "";
+    const duration = Number(segment.speechDuration || Number(segment.speechEnd) - Number(segment.start));
+    writeText(
+      join(projectDir, segment.media.subtitles),
+      `WEBVTT\n\n${formatVttTime(0)} --> ${formatVttTime(duration)}\n${text}\n`,
+    );
+  }
 }
 
 function writeSilentNarration(path, durationSec) {
@@ -168,12 +234,56 @@ function writeSilentNarration(path, durationSec) {
   );
 }
 
-function buildFixture({ repoRoot, projectDir, useRealAudio }) {
+function applyAdversarialFixture({ source, manifest, motion }) {
+  const title = (manifest.elements || []).find((element) => element.id === "title");
+  const method = (manifest.elements || []).find((element) => element.id === "method");
+  if (!title || !method) fail("adversarial fixture requires title and method elements");
+
+  title.bbox = [1980, 1240, 120, 120];
+  method.bbox = [980, 700, 12, 12];
+  if (method.annotations?.box_method) {
+    method.annotations.box_method.boxBounds = [980, 700, 12, 12];
+  }
+
+  const hook = cloneJson(source.segments[0]);
+  hook.actions[0].spokenAnchor = "不会出现在字幕里的同步锚点";
+  hook.actions[0].anchorRatio = 0.52;
+
+  const methodSegment = cloneJson(source.segments[1]);
+  methodSegment.text = "核心方法：先测真实音频时长，再把动作压进句子。";
+  methodSegment.caption = methodSegment.text;
+  methodSegment.actions[0].spokenAnchor = "真实音频时长";
+  methodSegment.actions[0].anchorRatio = 0.32;
+
+  const wrap = cloneJson(source.segments[0]);
+  wrap.id = "wrap";
+  wrap.text = "最后回到全景，检查每个动作是否真的对齐。";
+  wrap.caption = wrap.text;
+  wrap.target = "title";
+  wrap.actions[0].spokenAnchor = "全景";
+  wrap.actions[0].anchorRatio = 0.4;
+  source.segments = [hook, methodSegment, wrap];
+
+  const hookMotion = cloneJson(motion.segments[0]);
+  hookMotion.actions[0].spokenAnchor = hook.actions[0].spokenAnchor;
+  const methodMotion = cloneJson(motion.segments[1]);
+  methodMotion.caption = methodSegment.caption;
+  methodMotion.actions[0].spokenAnchor = methodSegment.actions[0].spokenAnchor;
+  const wrapMotion = cloneJson(motion.segments[0]);
+  wrapMotion.id = "wrap";
+  wrapMotion.caption = wrap.caption;
+  wrapMotion.target = "title";
+  wrapMotion.actions[0].spokenAnchor = wrap.actions[0].spokenAnchor;
+  motion.segments = [hookMotion, methodMotion, wrapMotion];
+}
+
+function buildFixture({ repoRoot, projectDir, useRealAudio, adversarial }) {
   const exampleRoot = join(repoRoot, "whiteboard-infographic-video-renderer", "examples", "input");
   const source = cloneJson(readJson(join(exampleRoot, "script", "voiceover_segments.json")));
-  const manifest = readJson(join(exampleRoot, "board", "board-01.board_manifest.json"));
+  const manifest = cloneJson(readJson(join(exampleRoot, "board", "board-01.board_manifest.json")));
   const motion = cloneJson(readJson(join(exampleRoot, "board", "board-01.motion_plan.json")));
 
+  if (adversarial) applyAdversarialFixture({ source, manifest, motion });
   for (const segment of source.segments || []) segment.boardId = "board-01";
   for (const segment of motion.segments || []) segment.boardId = "board-01";
 
@@ -206,14 +316,7 @@ function buildFixture({ repoRoot, projectDir, useRealAudio }) {
     writeText(join(projectDir, "audio", "narration.wav"), "placeholder audio for skipped render validation\n");
   }
   writeJson(join(projectDir, "audio", "voiceover_timing.json"), timing);
-  writeText(
-    join(projectDir, "audio", "segments", "01-hook.vtt"),
-    "WEBVTT\n\n00:00:00.000 --> 00:00:03.500\n做白板视频，最怕的是画面和口播不同步。\n",
-  );
-  writeText(
-    join(projectDir, "audio", "segments", "02-method.vtt"),
-    "WEBVTT\n\n00:00:00.000 --> 00:00:04.380\n先测真实音频时长，再把每个批注动作压到句子里面。\n",
-  );
+  writeFixtureSubtitles(projectDir, timing);
 
   return {
     source,
@@ -250,7 +353,7 @@ function runRenderer({ repoRoot, projectDir, boardRoot, voiceoverPath, realRende
   }
 }
 
-function validateOutputs(projectDir, { realRender }) {
+function validateOutputs(projectDir, { realRender, adversarial }) {
   const actionTimingPath = join(projectDir, "sync", "action_timing.json");
   const cameraPlanPath = join(projectDir, "sync", "camera_plan.json");
   const qaMarkdownPath = join(projectDir, "sync", "action_camera_qa_report.md");
@@ -286,6 +389,40 @@ function validateOutputs(projectDir, { realRender }) {
   const combined = readJson(combinedPath);
   const report = readJson(reportPath);
   const qaMarkdown = readFileSync(qaMarkdownPath, "utf8");
+
+  if (adversarial) {
+    assert(!realRender, "--adversarial is intended for the fast skipped-render regression");
+    assert(actionTiming.actions?.length === 3, "adversarial fixture should produce three action timing rows");
+    assert(actionTiming.actions.some((action) => !String(action.syncSource || "").startsWith("cue-")), "adversarial fixture should include a sync fallback");
+    assert(cameraPlan.segments?.some((segment) => segment.focusStrategy === "emphasis"), "adversarial camera plan should exercise emphasis strategy");
+    assert(cameraPlan.segments?.some((segment) => segment.zoomStatus !== "pass"), "adversarial camera plan should flag zoom pressure");
+    assert(qa.summary?.status === "fail", "adversarial QA should fail overall");
+    assert(qa.summary?.actionCount === 3, "adversarial QA should cover three actions");
+    assert(qa.summary?.fallbackActions >= 1, "adversarial QA should report sync fallback actions");
+    assert(qa.summary?.bboxIssues >= 1, "adversarial QA should report bbox issues");
+    assert(qa.summary?.cameraWarnings >= 1, "adversarial QA should report camera zoom warnings");
+    assert(qa.summary?.keyframeIssues === 3, "adversarial skipped-render QA should report keyframe issues for all actions");
+    assert(qa.rows?.some((row) => row.syncStatus === "warn"), "adversarial rows should include sync warning");
+    assert(qa.rows?.some((row) => row.bboxStatus === "fail"), "adversarial rows should include bbox failure");
+    assert(qa.rows?.some((row) => row.cameraStatus === "warn"), "adversarial rows should include camera warning");
+    assert(qa.rows?.every((row) => row.keyframeStatus === "skipped"), "adversarial skipped-render rows should mark keyframes skipped");
+    assert(qaMarkdown.includes("bbox issues:"), "adversarial QA markdown should include bbox summary");
+    assert(report.qa?.status === "fail", "renderer report should carry adversarial QA failure");
+    assert(report.qa?.fallbackActions === qa.summary.fallbackActions, "renderer report should carry fallback count");
+    assert(report.camera?.warnings === qa.summary.cameraWarnings, "renderer report should carry camera warning count");
+    return {
+      mode: "adversarial-fast-smoke",
+      actions: actionTiming.actions.length,
+      strategies: cameraPlan.segments.map((segment) => segment.strategy),
+      qaStatus: qa.summary.status,
+      detected: {
+        fallbackActions: qa.summary.fallbackActions,
+        bboxIssues: qa.summary.bboxIssues,
+        cameraWarnings: qa.summary.cameraWarnings,
+        keyframeIssues: qa.summary.keyframeIssues,
+      },
+    };
+  }
 
   assert(actionTiming.actions?.length === 2, "fixture should produce two action timing rows");
   for (const [index, action] of actionTiming.actions.entries()) {
@@ -357,6 +494,9 @@ function main() {
     console.log(usage());
     return;
   }
+  if (args.realRender && args.adversarial) {
+    fail("--real-render and --adversarial are separate regressions; run them independently");
+  }
 
   const scriptDir = dirname(fileURLToPath(import.meta.url));
   const repoRoot = resolve(scriptDir, "..", "..");
@@ -364,7 +504,12 @@ function main() {
   let passed = false;
 
   try {
-    const fixture = buildFixture({ repoRoot, projectDir, useRealAudio: Boolean(args.realRender) });
+    const fixture = buildFixture({
+      repoRoot,
+      projectDir,
+      useRealAudio: Boolean(args.realRender),
+      adversarial: Boolean(args.adversarial),
+    });
     runRenderer({
       repoRoot,
       projectDir,
@@ -374,7 +519,10 @@ function main() {
       quality: args.quality,
       fps: args.fps,
     });
-    const summary = validateOutputs(projectDir, { realRender: Boolean(args.realRender) });
+    const summary = validateOutputs(projectDir, {
+      realRender: Boolean(args.realRender),
+      adversarial: Boolean(args.adversarial),
+    });
     passed = true;
     console.log(
       JSON.stringify(

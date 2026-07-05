@@ -220,6 +220,14 @@ node whiteboard-infographic-video-renderer/scripts/validate_action_camera_qa.mjs
 
 The script builds a temporary fixture outside the repository, reuses the public `examples/input/board/board.png` fixture, runs `render_multi_board_project.mjs` with `--skip-tts --skip-checks --skip-render`, and asserts the action rhythm, camera plan, renderer report, and action/camera QA fields. A `warn` QA status is acceptable in this smoke path because keyframe extraction is intentionally skipped.
 
+For adversarial QA regression:
+
+```bash
+node whiteboard-infographic-video-renderer/scripts/validate_action_camera_qa.mjs --adversarial
+```
+
+This mode builds a temporary bad fixture with an unmatched spoken anchor, out-of-bounds bbox, camera zoom pressure, and intentionally skipped keyframes. It expects the renderer to complete but the QA report to return `status=fail`, with nonzero fallback, bbox, camera, and keyframe issue counts. Use this before adversarial review so the reviewer can trust that the QA gate is not only checking happy-path artifact existence.
+
 For slower real-render regression:
 
 ```bash

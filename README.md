@@ -98,7 +98,13 @@ Run the repository checks before committing:
 npm run check
 ```
 
-`npm run check` includes a renderer QA smoke test that builds a temporary multi-board fixture outside the repository and verifies `sync/action_timing.json`, `sync/camera_plan.json`, `sync/action_camera_qa_report.md`, and the timing-updated motion plan.
+`npm run check` includes renderer QA smoke tests that build temporary multi-board fixtures outside the repository. The healthy fixture verifies `sync/action_timing.json`, `sync/camera_plan.json`, `sync/action_camera_qa_report.md`, and the timing-updated motion plan. The adversarial fixture deliberately injects an unmatched spoken anchor, out-of-bounds bbox, camera zoom pressure, and skipped keyframes, then asserts the QA report catches those problems.
+
+To run only the adversarial QA acceptance check:
+
+```bash
+npm run check:renderer-adversarial
+```
 
 For slower renderer verification with deterministic fixture timing/audio, HyperFrames checks, MP4 rendering, and action keyframe extraction:
 
@@ -107,6 +113,8 @@ npm run check:renderer-real
 ```
 
 This also runs in a temporary directory and removes generated media on success.
+
+Use adversarial review after both `npm run check` and `npm run check:renderer-real` pass, before merging or treating a generated project as accepted.
 
 ## Documentation
 

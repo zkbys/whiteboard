@@ -144,6 +144,7 @@ For module-specific changes, also run the closest validator or dry run:
 - D: `python3 hand-drawn-infographic-video-board/scripts/generate_board_package.py --help`
 - E: `node whiteboard-infographic-video-renderer/scripts/render_multi_board_project.mjs --help`
 - E action/camera QA regression: `npm run check:renderer-qa`
+- E adversarial action/camera QA regression: `npm run check:renderer-adversarial`
 - E optional real render regression: `npm run check:renderer-real`
 
 Do not report a pipeline run as successful unless the relevant acceptance artifacts exist and the validation results are recorded.

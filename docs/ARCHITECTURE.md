@@ -41,6 +41,7 @@ Use the package as current only if these features are present:
 - E writes `sync/camera_plan.json` with overview, region, emphasis, and recovery strategies instead of mechanically using each bbox as final framing.
 - E writes `sync/action_camera_qa_report.md` after render or skipped-render validation.
 - E has a fast regression check at `npm run check:renderer-qa` for action rhythm, camera strategy, and QA report fields.
+- E has an adversarial regression check at `npm run check:renderer-adversarial` that proves QA catches sync fallback, bbox, camera zoom, and keyframe completeness problems.
 - E has an optional real-render regression check at `npm run check:renderer-real` for deterministic fixture audio, HyperFrames checks, MP4 render, keyframes, and QA artifact completeness.
 - E records `anchorRatioSource=sync/action_timing.json` when anchors match.
 - The orchestrator acceptance criteria mention calibration and tokenized sync.

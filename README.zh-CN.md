@@ -98,7 +98,13 @@ runs/example-output/images/board-02.model-generated.png
 npm run check
 ```
 
-`npm run check` 会包含 renderer QA smoke：在仓库外的系统临时目录构造一个多板 fixture，并验证 `sync/action_timing.json`、`sync/camera_plan.json`、`sync/action_camera_qa_report.md` 和 timing 更新后的 motion plan。
+`npm run check` 会包含 renderer QA smoke：在仓库外的系统临时目录构造多板 fixture。健康样本会验证 `sync/action_timing.json`、`sync/camera_plan.json`、`sync/action_camera_qa_report.md` 和 timing 更新后的 motion plan。对抗样本会故意注入无法匹配的 spoken anchor、越界 bbox、镜头 zoom 压力和跳过的关键帧，并断言 QA 报告必须抓到这些问题。
+
+如果只想运行对抗式 QA 验收检查，可执行：
+
+```bash
+npm run check:renderer-adversarial
+```
 
 如果要做更慢但更接近真实验收的 E 阶段检查，可运行：
 
@@ -107,6 +113,8 @@ npm run check:renderer-real
 ```
 
 它会在临时目录里使用确定性的 fixture timing/audio，执行 HyperFrames 检查、MP4 渲染和 action keyframe 抽取，成功后删除生成媒体。
+
+建议在 `npm run check` 和 `npm run check:renderer-real` 都通过之后、合并分支或把某次生成结果判定为已验收之前，进行对抗式审查。
 
 ## 文档
 
