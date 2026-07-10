@@ -118,6 +118,19 @@ def build_manifest(args: argparse.Namespace) -> dict[str, Any]:
             }
         )
 
+    if args.preview_checked:
+        generation_notes = [
+            "The built-in image generation tool may expose preview images but no stable URL or file path.",
+            "User manually downloaded the previews into this run's images directory.",
+            "These PNG files are the actual visual layer passed into D/E.",
+        ]
+    else:
+        generation_notes = [
+            f"Images were generated and saved directly by {args.mode}.",
+            "Every provider output passed PNG signature and dimension validation before D/E.",
+            "No preview-only or manual-download asset was substituted for these files.",
+        ]
+
     return {
         "version": "0.1",
         "assetContract": {
@@ -126,13 +139,9 @@ def build_manifest(args: argparse.Namespace) -> dict[str, Any]:
         },
         "generationRun": {
             "mode": args.mode,
-            "previewChecked": True,
+            "previewChecked": args.preview_checked,
             "checkedAt": args.checked_at,
-            "notes": [
-                "The built-in image generation tool may expose preview images but no stable URL or file path.",
-                "User manually downloaded the previews into this run's images directory.",
-                "These PNG files are the actual visual layer passed into D/E.",
-            ],
+            "notes": generation_notes,
         },
         "boards": manifest_boards,
     }
@@ -151,6 +160,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--min-width", type=int, default=512, help="Minimum PNG width.")
     parser.add_argument("--min-height", type=int, default=512, help="Minimum PNG height.")
     parser.add_argument("--checked-at", default=date.today().isoformat(), help="Date string for generationRun.checkedAt.")
+    parser.add_argument(
+        "--preview-checked",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Whether a human confirmed preview-only images before saving them.",
+    )
     parser.add_argument(
         "--mode",
         default="built-in image_gen preview with manual download",

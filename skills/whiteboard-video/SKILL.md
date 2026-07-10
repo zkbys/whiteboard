@@ -1,6 +1,6 @@
 ---
 name: whiteboard-video
-description: Create a complete 30-60 second AI whiteboard infographic explainer video from a topic, viewpoint, or rough script. Use when the user asks for a whiteboard video, AI whiteboard explainer, 白板信息图讲解视频, or explicitly asks to use whiteboard-video; produce editable HyperFrames, preview.mp4, action/camera QA, keyframes, and integration_report.md while preserving the required interactive image handoff.
+description: Create a complete 30-60 second AI whiteboard infographic explainer video from a topic, viewpoint, or rough script. Use when the user asks for a whiteboard video, AI whiteboard explainer, 白板信息图讲解视频, or explicitly asks to use whiteboard-video; produce editable HyperFrames, preview.mp4, action/camera QA, keyframes, and integration_report.md with automatic PNG providers when configured and a safe interactive fallback.
 ---
 
 # Whiteboard Video
@@ -52,8 +52,8 @@ Run the fixed sequence:
 1. Preserve the user's stance and create the six-part B script package.
 2. Create semantic C board plans without bbox, camera, cursor, or animation geometry.
 3. Create final hand-drawn infographic prompts and review notes.
-4. Generate every required board image.
-5. Complete the interactive image handoff described below.
+4. Route every required board prompt through the configured image provider.
+5. Complete automatic PNG validation or the interactive image handoff described below.
 6. Write and validate `board_asset_manifest.json`.
 7. Calibrate generated-image bboxes when needed.
 8. Generate D into `board_source_for_e/`.
@@ -66,9 +66,29 @@ Use scripts from the bundled runtime with absolute paths derived from `SKILL_ROO
 
 In source-checkout testing only, replace `INTERNAL_SKILL.md` with the module's original `SKILL.md`.
 
-## Keep the interactive image handoff honest
+## Route image generation
 
-This release supports `interactive` image mode. If the image tool returns preview images without a stable local path:
+After C and Creator prompts exist, run:
+
+```bash
+python3 <RUNTIME>/whiteboard-infographic-pipeline-orchestrator/scripts/generate_board_images.py \
+  --project-dir <PROJECT> \
+  --provider auto
+```
+
+Interpret the exit status:
+
+- `0`: all PNGs passed validation and `board_asset_manifest.json` was written; continue to calibration and D/E.
+- `3`: no automatic provider is configured or some interactive PNGs are missing; generate previews with the available image tool and follow every exact path in `image_generation_report.json`.
+- `2`: provider, API, PNG validation, or manifest generation failed; stop and report the error without claiming image success.
+
+`auto` only uses OpenAI when `WHITEBOARD_IMAGE_PROVIDER=openai` is explicitly configured. The mere presence of `OPENAI_API_KEY` must not trigger a billable request. Before the first billable call, state the provider, model, size, and quality being used. Never print, persist, or expose the API key.
+
+For custom providers, use `WHITEBOARD_IMAGE_PROVIDER=command` and an executable `WHITEBOARD_IMAGE_COMMAND`; read `references/image-providers.md` for its argument contract.
+
+## Keep the interactive fallback honest
+
+Interactive remains the safe default. If the image tool returns preview images without a stable local path:
 
 - Stop once all preview images are generated.
 - Ask the user to save each preview as `<project>/images/<boardId>.model-generated.png`.
@@ -76,7 +96,7 @@ This release supports `interactive` image mode. If the image tool returns previe
 - Resume only after the files exist and pass PNG validation.
 - Never search hidden caches, invent URLs, reuse old assets, or substitute D SVG previews or placeholders.
 
-Do not claim zero-human automation. `auto` image-provider mode is not implemented in this release.
+Do not claim zero-human automation unless `image_generation_report.json` has `status=complete`, `automatic=true`, every board is `generated` or `reused`, and the manifest records `previewChecked=false`.
 
 ## Require the product outputs
 
@@ -87,6 +107,7 @@ video/preview.mp4
 video/hyperframes/
 video/keyframes/
 video/renderer_report.json
+image_generation_report.json
 sync/action_timing.json
 sync/camera_plan.json
 sync/action_camera_qa_report.md
@@ -101,3 +122,5 @@ Record all PASS/WARN/FAIL results and the manual image source in `integration_re
 ## Additional reference
 
 Read `references/install-layout.md` when installation resolution or target-agent behavior is unclear.
+
+Read `references/image-providers.md` before configuring OpenAI or a custom command provider.

@@ -6,15 +6,25 @@ This package was assembled from the latest usable local pipeline state.
 
 The public product surface is now `skills/whiteboard-video/SKILL.md`. `scripts/install.py` installs a complete copy to the current official user Skill locations for Codex (`$HOME/.agents/skills`) and Claude Code (`~/.claude/skills`). The installed runtime contains B/C/Creator/D/E/orchestrator, so it remains usable after the source clone is removed.
 
-`scripts/doctor.py` distinguishes installation readiness, render readiness, output writability, and image automation. The current image status is intentionally `WARN` in `interactive` mode because preview-only image tools still require one manual PNG save handoff. `auto` is not claimed or implemented.
+`scripts/doctor.py` distinguishes installation readiness, render readiness, output writability, and image automation. The default image status is intentionally `WARN` in `interactive` mode; a valid OpenAI or command provider reports `PASS` in `auto` mode.
 
 Clean installation regression coverage includes Codex, Claude Code, both targets, same-version idempotence, explicit upgrade, unmanaged-directory refusal, controlled missing dependencies, paths with spaces/non-ASCII characters, and scans for developer absolute paths or generated media.
+
+## Automatic image provider baseline (0.2.0)
+
+`whiteboard-infographic-pipeline-orchestrator/scripts/generate_board_images.py` now provides three explicit routes:
+
+- `interactive`: writes exact manual targets and exits with handoff-required status.
+- `openai`: calls `/v1/images/generations`, defaults to `gpt-image-2`, decodes `b64_json`, validates PNGs, and never persists the API key.
+- `command`: invokes one executable without a shell using a fixed prompt/output/board argument contract.
+
+Automatic runs write `image_generation_report.json`, atomically persist validated PNGs, reuse existing valid images on resume, and automatically continue into `board_asset_manifest.json`. API-key presence alone does not select a paid provider. The implementation is covered with a local mock HTTP server and command fixture, not a live billable API call.
 
 ## Latest Code Baseline
 
 | Area | Latest source used | Reason |
 | --- | --- | --- |
-| Orchestrator | `whiteboard-infographic-pipeline-orchestrator/SKILL.md`, `references/runbook.md` | Includes manual image handoff, calibration, word timing, action timing, and identity checks. |
+| Orchestrator | `whiteboard-infographic-pipeline-orchestrator/SKILL.md`, `references/runbook.md` | Includes automatic/interactive image handoff, calibration, word timing, action timing, and identity checks. |
 | D board control | `hand-drawn-infographic-video-board/scripts/generate_board_package.py` and `create_calibration_tool.py` | Supports `calibration/<boardId>.element_bboxes.json` and fixes duplicate-title behavior after calibration. |
 | E renderer | `whiteboard-infographic-video-renderer/scripts/render_multi_board_project.mjs` and `validate_action_camera_qa.mjs` | Generates `audio/word_timing.json`, `sync/action_timing.json`, renderer action rhythm metadata, `sync/camera_plan.json`, and action/camera QA reports, with a fast regression check. |
 | Integration proof | `docs/REAL_E2E_SAMPLE.md` | Latest local real end-to-end sample after action rhythm, camera strategy, and action/camera QA optimization. |
@@ -67,6 +77,7 @@ The current multi-board renderer line adds these post-baseline controls:
 - `npm run check` includes `check:renderer-qa`, which builds a temporary healthy fixture and asserts the action rhythm, camera plan, renderer report, and QA contract without committing generated media.
 - `npm run check` also includes `check:renderer-adversarial`, which builds a temporary bad fixture and asserts QA detects sync fallback, bbox failures, camera zoom warnings, and skipped keyframes.
 - `npm run check` includes `check:install`, which builds and diagnoses self-contained Codex and Claude Code installations in system temporary directories.
+- `npm run check` includes `check:image-provider`, which validates interactive, OpenAI-mock, command, resume, malformed-response, secret, PNG, and manifest behavior.
 - `npm run check:renderer-real` is available as a slower optional regression for deterministic fixture audio, HyperFrames lint/validate/inspect, MP4 render, keyframe extraction, contact sheets, and QA artifact completeness.
 
 This delta is implemented in the multi-board E path. The legacy single-board renderer remains a compatibility path and is not the acceptance target for this optimization.

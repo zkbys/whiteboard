@@ -110,9 +110,17 @@ Every final image prompt should include:
 - Only 1-2 semantic highlight colors.
 - Negative prompt terms excluding photorealistic, 3D render, stock photo, corporate chart, smooth digital art.
 
-## 4. Fixed manual image handoff
+## 4. Image provider and interactive fallback
 
-Generate model images from `imagegen_prompts/*.imagegen_prompt.txt`.
+Route final prompts through the provider adapter:
+
+```bash
+python3 whiteboard-infographic-pipeline-orchestrator/scripts/generate_board_images.py \
+  --project-dir /path/to/project-output \
+  --provider auto
+```
+
+Exit `0` means PNGs and `board_asset_manifest.json` are ready. Exit `2` is a provider/validation failure. Exit `3` means interactive handoff is required; read the exact targets from `image_generation_report.json`.
 
 If the generation tool only shows preview images, stop here and ask the user to download each preview image manually. Required target:
 
@@ -132,7 +140,15 @@ Do not:
 - Reuse older smoke preview PNGs.
 - Continue into D/E before the files exist.
 
-After the user confirms the images are saved, write the manifest:
+After the user confirms the images are saved, rerun the router so it validates and reuses them:
+
+```bash
+python3 whiteboard-infographic-pipeline-orchestrator/scripts/generate_board_images.py \
+  --project-dir /path/to/project-output \
+  --provider interactive
+```
+
+The lower-level manifest command remains available:
 
 ```bash
 python3 whiteboard-infographic-pipeline-orchestrator/scripts/write_board_asset_manifest.py \
@@ -262,7 +278,7 @@ If this fails, regenerate D/E from the correct manifest. Do not patch the report
 - Absolute output root.
 - What B/C/creator/image/D/E produced.
 - Validator and renderer pass/fail results.
-- Manual image download source and exact file names.
+- Image provider, automatic/manual status, source, and exact file names from `image_generation_report.json`.
 - Calibration files used and unresolved alignment issues.
 - Word/anchor sync confidence from `sync/action_timing.json`.
 - Camera strategy and action/camera QA from `sync/camera_plan.json` and `sync/action_camera_qa_report.md`.

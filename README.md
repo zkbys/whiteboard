@@ -124,6 +124,7 @@ whiteboard-runs/<run-id>/
 ├── script/
 ├── infographic/
 ├── images/*.model-generated.png
+├── image_generation_report.json
 ├── board_asset_manifest.json
 ├── board_source_for_e/
 ├── audio/
@@ -166,20 +167,42 @@ doctor 分层报告：
 | `output` | 视频项目输出目录是否可写 |
 | `image` | 当前图片模式是 `interactive` 还是 `auto` |
 
-`install=PASS` 但 `render=FAIL` 表示 Skill 已正确安装，但尚不能完成真实渲染。`image=WARN` 是当前 interactive 版本的预期状态，不代表安装失败。
+`install=PASS` 但 `render=FAIL` 表示 Skill 已正确安装，但尚不能完成真实渲染。默认 interactive 模式下 `image=WARN` 是预期状态；auto provider 和密钥/命令齐全时会显示 `image=PASS`。
+
+## 图片模式：interactive 与 auto
+
+`interactive` 仍是无密钥的安全默认。如果图片工具只返回预览图，Agent 会暂停一次，并从 `image_generation_report.json` 列出每张 PNG 的确切保存路径。图片齐全后，流水线继续 D/E、渲染、关键帧和 QA。
+
+要使用 OpenAI 自动生图和 PNG 落盘：
+
+```bash
+export WHITEBOARD_IMAGE_MODE=auto
+export WHITEBOARD_IMAGE_PROVIDER=openai
+export OPENAI_API_KEY="..."
+```
+
+默认使用当前官方图像模型 `gpt-image-2`、`1536x1024`、`medium` 质量和 PNG 输出。该模型与 `/v1/images/generations` 端点依据 [OpenAI GPT Image 2 文档](https://developers.openai.com/api/docs/models/gpt-image-2) 和 [Images API 参考](https://developers.openai.com/api/reference/resources/images)。仅存在 `OPENAI_API_KEY` 不会触发计费请求；还必须显式配置 `WHITEBOARD_IMAGE_PROVIDER=openai`。
+
+自建图片 provider 可通过标准命令适配：
+
+```bash
+export WHITEBOARD_IMAGE_MODE=auto
+export WHITEBOARD_IMAGE_PROVIDER=command
+export WHITEBOARD_IMAGE_COMMAND="/absolute/path/to/image-provider"
+```
+
+运行前可用 `python3 scripts/doctor.py --image-mode auto --json` 验证配置。
 
 ## 当前已知限制
-
-当前发布的是可安装的 `interactive` 版本。如果图片工具只返回预览图，Agent 会生成所有白板图后暂停一次，要求用户将 PNG 保存到它列出的确切路径。图片齐全后，流水线继续 D/E、渲染、关键帧和 QA。
 
 当前不会：
 
 - 搜索隐藏预览缓存。
 - 伪造图片 URL。
 - 用占位图或 D 生成的 SVG 冒充模型 PNG。
-- 声称从主题到视频已经实现零人工介入。
+- 在 provider 报告失败或 interactive 文件缺失时声称零人工介入。
 
-`auto` 模式需要未来增加稳定 image provider/API、API key 配置和自动 PNG 落盘。
+当前 auto 完成了 provider 调用、PNG 原子落盘、签名/尺寸校验、断点复用和 manifest 接续；OCR/视觉 bbox 初始定位仍属于下一轮。
 
 ## 开发者：内部流水线
 
@@ -188,7 +211,7 @@ doctor 分层报告：
   -> B 口播打磨
   -> C 语义信息图规划
   -> Creator 生图提示词
-  -> interactive 模型 PNG 交接
+  -> auto provider 或 interactive 模型 PNG 交接
   -> D 白板控制层与校准
   -> E 真实 timing、HyperFrames、MP4、关键帧与 QA
   -> integration_report.md

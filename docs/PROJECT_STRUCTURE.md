@@ -25,6 +25,7 @@ This repository contains the current public AI whiteboard infographic pipeline. 
 | `scripts/install.py` | Copy-based Codex/Claude installer with dry-run, ownership, idempotence, and upgrade protection. |
 | `scripts/doctor.py` | PASS/WARN/FAIL checks for installation, render dependencies, output, and image mode. |
 | `tests/test_install.py` | Temporary-directory clean installation and collision/doctor regression tests. |
+| `tests/test_image_provider.py` | Mock OpenAI API, command provider, interactive fallback, PNG, secret, and manifest regression tests. |
 
 ## Internal Pipeline Modules
 
@@ -37,7 +38,7 @@ The installer copies these directories below `whiteboard-video/runtime/`. They a
 | `hand-drawn-infographic-creator/` | Creator | Final image-generation prompt and review notes. |
 | `hand-drawn-infographic-video-board/` | D | Board control package, annotation geometry, calibration, motion plans. |
 | `whiteboard-infographic-video-renderer/` | E | Narration, timing, token sync, HyperFrames, preview video, keyframes. |
-| `whiteboard-infographic-pipeline-orchestrator/` | Orchestrator | End-to-end order, manual handoff rules, validation, reporting. |
+| `whiteboard-infographic-pipeline-orchestrator/` | Orchestrator | End-to-end order, automatic/interactive image handoff, validation, reporting. |
 
 ## Documentation
 

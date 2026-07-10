@@ -26,6 +26,7 @@ MODULE_FILES = (
     "whiteboard-infographic-pipeline-orchestrator/SKILL.md",
     "whiteboard-infographic-pipeline-orchestrator/references/runbook.md",
     "whiteboard-infographic-pipeline-orchestrator/references/contracts.md",
+    "whiteboard-infographic-pipeline-orchestrator/scripts/generate_board_images.py",
 )
 SKILL_FILES = (
     "SKILL.md",
@@ -53,7 +54,7 @@ def parse_args() -> argparse.Namespace:
         "--image-mode",
         choices=("interactive", "auto"),
         default=os.environ.get("WHITEBOARD_IMAGE_MODE", "interactive"),
-        help="Current image handoff mode. auto is reserved for a future provider adapter.",
+        help="Current image mode. auto validates the configured OpenAI or command provider.",
     )
     parser.add_argument(
         "--skip-hyperframes-probe",
@@ -304,16 +305,66 @@ def check_image_mode(checks: list[dict[str, Any]], mode: str) -> None:
             mode=mode,
             automatic_png_provider=False,
         )
-    else:
+        return
+
+    provider = os.environ.get("WHITEBOARD_IMAGE_PROVIDER", "").strip().lower()
+    if provider == "openai":
+        api_key_env = os.environ.get("WHITEBOARD_OPENAI_API_KEY_ENV", "OPENAI_API_KEY")
+        configured = bool(os.environ.get(api_key_env))
         add_check(
             checks,
             "image.mode",
             "image",
-            "FAIL",
-            "Auto image-provider mode is not implemented in this release.",
+            "PASS" if configured else "FAIL",
+            (
+                "Automatic OpenAI image generation is configured."
+                if configured
+                else f"OpenAI image provider requires {api_key_env}."
+            ),
             mode=mode,
-            automatic_png_provider=False,
+            provider=provider,
+            model=os.environ.get("WHITEBOARD_OPENAI_IMAGE_MODEL", "gpt-image-2"),
+            api_key_env=api_key_env,
+            api_key_present=configured,
+            automatic_png_provider=configured,
         )
+        return
+
+    if provider == "command":
+        command = os.environ.get("WHITEBOARD_IMAGE_COMMAND", "")
+        expanded = str(Path(command).expanduser()) if command else ""
+        executable = shutil.which(expanded) if expanded else None
+        if not executable and expanded:
+            path = Path(expanded)
+            if path.is_file() and os.access(path, os.X_OK):
+                executable = str(path.resolve())
+        add_check(
+            checks,
+            "image.mode",
+            "image",
+            "PASS" if executable else "FAIL",
+            (
+                "Automatic command image provider is configured."
+                if executable
+                else "Command provider requires executable WHITEBOARD_IMAGE_COMMAND."
+            ),
+            mode=mode,
+            provider=provider,
+            command=executable,
+            automatic_png_provider=bool(executable),
+        )
+        return
+
+    add_check(
+        checks,
+        "image.mode",
+        "image",
+        "FAIL",
+        "Auto mode requires WHITEBOARD_IMAGE_PROVIDER=openai or command.",
+        mode=mode,
+        provider=provider or None,
+        automatic_png_provider=False,
+    )
 
 
 def category_status(checks: list[dict[str, Any]], category: str) -> str:

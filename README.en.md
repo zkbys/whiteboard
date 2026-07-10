@@ -101,6 +101,7 @@ whiteboard-runs/<run-id>/
 ├── script/
 ├── infographic/
 ├── images/*.model-generated.png
+├── image_generation_report.json
 ├── board_asset_manifest.json
 ├── board_source_for_e/
 ├── audio/
@@ -135,13 +136,35 @@ The doctor reports four independent categories:
 | `output` | Whether the project output directory is writable |
 | `image` | Whether image mode is `interactive` or `auto` |
 
-`install=PASS` with `render=FAIL` means the Skill is installed correctly but cannot yet perform a real render. `image=WARN` is expected for the supported interactive release and is not an installation failure.
+`install=PASS` with `render=FAIL` means the Skill is installed correctly but cannot yet perform a real render. `image=WARN` is expected for the default interactive mode; a complete automatic provider configuration reports `image=PASS`.
 
-## Current limitation: one interactive image handoff
+## Image modes: interactive and auto
 
-The current release is installable but interactive. When an image tool exposes preview images without stable file paths, the agent pauses once, lists exact `images/<boardId>.model-generated.png` destinations, and waits for the user to save the PNGs. It then resumes D/E, rendering, keyframes, and QA.
+Interactive remains the safe credential-free default. When an image tool exposes preview images without stable file paths, the agent pauses once and reads exact PNG destinations from `image_generation_report.json`. It resumes D/E, rendering, keyframes, and QA after every image passes validation.
 
-The Skill never searches hidden caches, invents image URLs, substitutes placeholders or D SVG previews, or claims zero-human automation. A future `auto` mode needs a stable image provider/API, key configuration, and direct PNG persistence.
+Configure automatic OpenAI generation and direct PNG persistence with:
+
+```bash
+export WHITEBOARD_IMAGE_MODE=auto
+export WHITEBOARD_IMAGE_PROVIDER=openai
+export OPENAI_API_KEY="..."
+```
+
+The default is the current `gpt-image-2` model, `1536x1024`, medium quality, and PNG output, based on the official [GPT Image 2 model page](https://developers.openai.com/api/docs/models/gpt-image-2) and [Images API reference](https://developers.openai.com/api/reference/resources/images). An API key alone never triggers a billable call; the provider must also be configured explicitly.
+
+Custom adapters can use the shell-free command contract:
+
+```bash
+export WHITEBOARD_IMAGE_MODE=auto
+export WHITEBOARD_IMAGE_PROVIDER=command
+export WHITEBOARD_IMAGE_COMMAND="/absolute/path/to/image-provider"
+```
+
+Validate either configuration with `python3 scripts/doctor.py --image-mode auto --json`.
+
+## Current limitations
+
+The Skill never searches hidden caches, invents image URLs, substitutes placeholders or D SVG previews, leaks API keys, or claims zero-human automation after a failed/incomplete provider run. Auto mode now covers provider calls, atomic PNG persistence, validation, resume, and manifest handoff; OCR/visual bbox initialization remains future work.
 
 ## Developer architecture and validation
 
@@ -150,7 +173,7 @@ Topic or rough script
   -> B script shaping
   -> C semantic infographic planning
   -> Creator prompts
-  -> interactive model-PNG handoff
+  -> automatic provider or interactive model-PNG handoff
   -> D board control and calibration
   -> E measured timing, HyperFrames, MP4, keyframes, and QA
   -> integration_report.md

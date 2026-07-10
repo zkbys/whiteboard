@@ -65,7 +65,8 @@ Keep the module responsibilities separated:
 - Do not make symlinks the only installation mechanism.
 - Do not overwrite a same-name directory without this project's valid `installation.json` marker.
 - Keep generated user projects outside the managed installation, defaulting to `<cwd>/whiteboard-runs/`.
-- Preserve the `interactive` PNG handoff warning; do not advertise `auto` until a real provider writes PNGs directly.
+- Keep `interactive` as the safe default. Advertise `auto` only when `generate_board_images.py` writes validated PNGs directly and its report is `complete`.
+- Never trigger a billable OpenAI image request from API-key presence alone; require explicit provider configuration and never log the key.
 
 ## Latest-Version Guardrails
 
@@ -162,5 +163,6 @@ For module-specific changes, also run the closest validator or dry run:
 - E adversarial action/camera QA regression: `npm run check:renderer-adversarial`
 - E optional real render regression: `npm run check:renderer-real`
 - Public Skill validation: `python3 -m unittest tests/test_install.py`
+- Image provider validation: `python3 -m unittest tests/test_image_provider.py`
 
 Do not report a pipeline run as successful unless the relevant acceptance artifacts exist and the validation results are recorded.

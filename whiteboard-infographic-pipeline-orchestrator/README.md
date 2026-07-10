@@ -10,7 +10,7 @@ It coordinates:
 - D: `hand-drawn-infographic-video-board`
 - E: `whiteboard-infographic-video-renderer`
 
-The latest public-ready baseline is the post-optimization pipeline: manual model-image handoff, D bbox calibration, measured audio timing, tokenized spoken-anchor sync, editable HyperFrames output, keyframes, and asset identity checks.
+The latest public-ready baseline includes explicit OpenAI/command image providers with interactive fallback, D bbox calibration, measured audio timing, tokenized spoken-anchor sync, editable HyperFrames output, keyframes, and asset identity checks.
 
 ## Natural Language Usage
 
@@ -39,6 +39,7 @@ whiteboard-infographic-pipeline-orchestrator/
 │   └── runbook.md
 ├── scripts/
 │   ├── validate_orchestrator_inputs.py
+│   ├── generate_board_images.py
 │   ├── write_board_asset_manifest.py
 │   └── check_asset_identity.py
 └── examples/
@@ -58,7 +59,15 @@ python3 whiteboard-infographic-pipeline-orchestrator/scripts/validate_orchestrat
   --project-dir runs/example-output
 ```
 
-After generated PNGs are manually saved into `runs/example-output/images/`:
+After Creator prompts exist, route automatic or interactive image handling:
+
+```bash
+python3 whiteboard-infographic-pipeline-orchestrator/scripts/generate_board_images.py \
+  --project-dir runs/example-output \
+  --provider auto
+```
+
+For lower-level manifest-only validation after PNGs exist:
 
 ```bash
 python3 whiteboard-infographic-pipeline-orchestrator/scripts/write_board_asset_manifest.py \

@@ -33,6 +33,7 @@ topic_input.txt
   -> script/
   -> infographic/
   -> creator_outputs/ + imagegen_prompts/
+  -> image_generation_report.json
   -> images/*.model-generated.png
   -> board_asset_manifest.json
   -> calibration/*.element_bboxes.json
@@ -46,11 +47,28 @@ topic_input.txt
 - B owns script shaping and voiceover segments.
 - C owns semantic board planning only. C must not own final bbox, cursor, camera, or animation coordinates.
 - Creator owns prompt refinement and image-generation review notes.
-- The operator owns manual PNG handoff when an image tool exposes previews but no stable file path.
+- The image provider router owns explicit OpenAI/command provider execution, atomic PNG persistence, validation, resume, and manifest continuation.
+- The operator owns manual PNG handoff when no automatic provider is configured or an image tool exposes previews but no stable file path.
 - D owns board-control geometry, annotation manifests, initial camera references, and motion plans.
 - E owns measured audio timing, tokenized spoken-anchor sync, renderer-level action rhythm, renderer camera strategy, HyperFrames output, MP4 preview, keyframes, and action/camera QA.
 - The orchestrator owns run order and acceptance reporting.
 - The public `whiteboard-video` Skill owns installation resolution, doctor execution, the user-facing trigger, and selection of a user-writable run root.
+
+## Image provider boundary
+
+`generate_board_images.py` is the only automatic image persistence entrypoint. Its `auto` route uses an explicitly configured provider, never API-key presence by itself:
+
+```text
+Creator prompts
+  -> provider=OpenAI GPT Image 2 | command | interactive
+  -> temporary PNG
+  -> signature + dimension validation
+  -> atomic images/<boardId>.model-generated.png
+  -> image_generation_report.json
+  -> board_asset_manifest.json
+```
+
+OpenAI responses are expected as `data[0].b64_json`. Secrets remain in environment variables and are never written to reports. Existing valid PNGs are reused by default so a partial paid run can resume safely.
 
 ## Latest Version Signals
 

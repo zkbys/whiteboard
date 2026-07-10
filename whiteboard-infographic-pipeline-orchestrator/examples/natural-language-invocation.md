@@ -28,7 +28,7 @@ topic_input.txt
 
 5. Run B/C/creator/image/D/E in the normal orchestrator sequence.
 6. Pause at the model-image handoff if generated images are preview-only.
-7. After the user manually downloads PNGs into `images/`, continue D/E and finish with:
+7. Run the configured image provider; if it returns interactive handoff status, wait for the user to save PNGs into `images/`. Then continue D/E and finish with:
 
 ```text
 video/preview.mp4
