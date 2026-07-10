@@ -141,6 +141,15 @@ whiteboard-runs/<run-id>/
 └── integration_report.md
 ```
 
+真实渲染完成后，运行统一的 v1 发布验收器：
+
+```bash
+python3 whiteboard-infographic-pipeline-orchestrator/scripts/validate_release_candidate.py \
+  --project-dir /absolute/path/to/whiteboard-run
+```
+
+它会校验视频/音频时长、图片身份、D/E 板块契约、HyperFrames、QA、关键帧和必需产物，并写入 `v1_release_acceptance.json` 与 `.md`。完整标准见 [V1 Release Criteria](docs/V1_RELEASE_CRITERIA.md)。
+
 ## 一次性环境要求和 doctor
 
 - Python 3.10+
@@ -202,7 +211,7 @@ export WHITEBOARD_IMAGE_COMMAND="/absolute/path/to/image-provider"
 - 用占位图或 D 生成的 SVG 冒充模型 PNG。
 - 在 provider 报告失败或 interactive 文件缺失时声称零人工介入。
 
-当前 auto 完成了 provider 调用、PNG 原子落盘、签名/尺寸校验、断点复用和 manifest 接续；OCR/视觉 bbox 初始定位仍属于下一轮。
+当前 auto 完成了 provider 调用、PNG 原子落盘、签名/尺寸校验、断点复用和 manifest 接续。OCR/视觉 bbox 初始定位明确不属于 v1.0；bbox 不可靠时优先采用保守镜头或可选人工校准。
 
 ## 开发者：内部流水线
 

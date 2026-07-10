@@ -40,6 +40,7 @@ topic_input.txt
   -> board_source_for_e/
   -> audio/ + sync/ + video/
   -> integration_report.md
+  -> v1_release_acceptance.json + v1_release_acceptance.md
 ```
 
 ## Contract Boundaries
@@ -52,6 +53,7 @@ topic_input.txt
 - D owns board-control geometry, annotation manifests, initial camera references, and motion plans.
 - E owns measured audio timing, tokenized spoken-anchor sync, renderer-level action rhythm, renderer camera strategy, HyperFrames output, MP4 preview, keyframes, and action/camera QA.
 - The orchestrator owns run order and acceptance reporting.
+- The release validator owns final cross-stage acceptance; it does not reimplement B/C/D/E business validation.
 - The public `whiteboard-video` Skill owns installation resolution, doctor execution, the user-facing trigger, and selection of a user-writable run root.
 
 ## Image provider boundary

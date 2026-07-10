@@ -26,6 +26,7 @@ This repository contains the current public AI whiteboard infographic pipeline. 
 | `scripts/doctor.py` | PASS/WARN/FAIL checks for installation, render dependencies, output, and image mode. |
 | `tests/test_install.py` | Temporary-directory clean installation and collision/doctor regression tests. |
 | `tests/test_image_provider.py` | Mock OpenAI API, command provider, interactive fallback, PNG, secret, and manifest regression tests. |
+| `tests/test_release_acceptance.py` | Healthy and adversarial temp-project checks for the executable v1 delivery contract. |
 
 ## Internal Pipeline Modules
 
@@ -48,6 +49,8 @@ The installer copies these directories below `whiteboard-video/runtime/`. They a
 | `docs/VERSION_AUDIT.md` | Why this package is the latest baseline and which old versions are excluded. |
 | `docs/REAL_E2E_SAMPLE.md` | Latest local real end-to-end sample summary; generated media remains ignored. |
 | `docs/OPEN_SOURCE_CHECKLIST.md` | Publishing safety checklist. |
+| `docs/V1_RELEASE_CRITERIA.md` | Fixed v1 scope, executable acceptance contract, and stop condition. |
+| `docs/V1_LOOP_LOG.md` | Durable release-driven Loop Engineering state. |
 | `whiteboard-infographic-pipeline-orchestrator/references/runbook.md` | End-to-end execution runbook. |
 | `whiteboard-infographic-pipeline-orchestrator/references/contracts.md` | Cross-module package contract. |
 

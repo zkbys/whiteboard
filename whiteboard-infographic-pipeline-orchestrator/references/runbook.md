@@ -288,3 +288,12 @@ If this fails, regenerate D/E from the correct manifest. Do not patch the report
 - Backfill items for B/C/creator/D/E.
 
 The report is an acceptance artifact, not a marketing summary.
+
+## 10. Run final v1 acceptance
+
+```bash
+python3 whiteboard-infographic-pipeline-orchestrator/scripts/validate_release_candidate.py \
+  --project-dir /path/to/project-output
+```
+
+Do not report a real run as complete unless `v1_release_acceptance.json` says `PASS`.

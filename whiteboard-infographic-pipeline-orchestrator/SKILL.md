@@ -120,6 +120,7 @@ Use `board_source_for_e/` as D's output that E reads. Do not point E's `--board-
 7. **D board control package**: Use `hand-drawn-infographic-video-board` with the project package, `board_asset_manifest.json`, and any `calibration/` files to create `board_source_for_e/`.
 8. **E renderer**: Use `whiteboard-infographic-video-renderer` multi-board mode to create narration, measured timing, `audio/word_timing.json`, `sync/action_timing.json`, renderer action rhythm, `sync/camera_plan.json`, action/camera QA, captions, HyperFrames, preview MP4, and keyframes.
 9. **Identity check and report**: Run `check_asset_identity.py`, inspect keyframes, and write `integration_report.md`.
+10. **V1 release acceptance**: Run `validate_release_candidate.py`. A real run is complete only when it writes PASS `v1_release_acceptance.json` and `.md`.
 
 ## 生图 provider 与人工下载暂停点
 
@@ -174,6 +175,7 @@ A run is complete only when all of these are true:
 - If visual alignment is off, `calibration/<boardId>.element_bboxes.json` exists for the affected board and D reports the calibration file in `calibration_report.md`.
 - `check_asset_identity.py` confirms manifest PNG -> D `board.png` -> HyperFrames `board.png` are identical for every board.
 - `integration_report.md` records pass/fail results, asset source, known degradations, keyframe inspection, and next backfill items.
+- `validate_release_candidate.py` probes final audio/video and enforces the cross-stage v1 contract.
 
 ## 常见失败和恢复方式
 
@@ -193,3 +195,4 @@ A run is complete only when all of these are true:
 - Use `scripts/generate_board_images.py` after Creator prompts to select automatic or interactive image handling.
 - Use `scripts/write_board_asset_manifest.py` after the manual image download pause.
 - Use `scripts/check_asset_identity.py` after D/E to prove the rendered project used the manifest PNGs.
+- Use `scripts/validate_release_candidate.py` last; smoke-mode warnings are not real-release acceptance.

@@ -53,6 +53,15 @@ class InstallTests(unittest.TestCase):
                 (skill_root / "runtime" / module / "INTERNAL_SKILL.md").is_file()
             )
             self.assertFalse((skill_root / "runtime" / module / "SKILL.md").exists())
+        self.assertTrue(
+            (
+                skill_root
+                / "runtime"
+                / "whiteboard-infographic-pipeline-orchestrator"
+                / "scripts"
+                / "validate_release_candidate.py"
+            ).is_file()
+        )
 
         discovered = list(skill_root.rglob("SKILL.md"))
         self.assertEqual(discovered, [skill_root / "SKILL.md"])

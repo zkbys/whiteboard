@@ -164,5 +164,6 @@ For module-specific changes, also run the closest validator or dry run:
 - E optional real render regression: `npm run check:renderer-real`
 - Public Skill validation: `python3 -m unittest tests/test_install.py`
 - Image provider validation: `python3 -m unittest tests/test_image_provider.py`
+- V1 release-candidate validation: `python3 -m unittest tests/test_release_acceptance.py`
 
 Do not report a pipeline run as successful unless the relevant acceptance artifacts exist and the validation results are recorded.

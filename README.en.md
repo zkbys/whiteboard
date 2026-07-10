@@ -118,6 +118,15 @@ whiteboard-runs/<run-id>/
 └── integration_report.md
 ```
 
+After a real render, run the unified v1 release validator:
+
+```bash
+python3 whiteboard-infographic-pipeline-orchestrator/scripts/validate_release_candidate.py \
+  --project-dir /absolute/path/to/whiteboard-run
+```
+
+It checks video/audio duration, image identity, D/E board contracts, HyperFrames, QA, keyframes, and required artifacts, then writes `v1_release_acceptance.json` and `.md`. See [V1 Release Criteria](docs/V1_RELEASE_CRITERIA.md).
+
 ## Requirements and doctor
 
 Rendering requires Python 3.10+, Node.js 20+, `ffmpeg`, `ffprobe`, `edge-tts`, `npx`, and downloadable or cached `hyperframes@0.6.99`.
@@ -164,7 +173,7 @@ Validate either configuration with `python3 scripts/doctor.py --image-mode auto 
 
 ## Current limitations
 
-The Skill never searches hidden caches, invents image URLs, substitutes placeholders or D SVG previews, leaks API keys, or claims zero-human automation after a failed/incomplete provider run. Auto mode now covers provider calls, atomic PNG persistence, validation, resume, and manifest handoff; OCR/visual bbox initialization remains future work.
+The Skill never searches hidden caches, invents image URLs, substitutes placeholders or D SVG previews, leaks API keys, or claims zero-human automation after a failed/incomplete provider run. Auto mode covers provider calls, atomic PNG persistence, validation, resume, and manifest handoff. OCR/visual bbox initialization is explicitly outside the v1.0 scope; low-confidence geometry uses conservative framing or optional manual calibration.
 
 ## Developer architecture and validation
 

@@ -59,6 +59,7 @@ Run the fixed sequence:
 8. Generate D into `board_source_for_e/`.
 9. Render E from measured audio timing into editable HyperFrames and MP4.
 10. Run asset identity and action/camera QA, inspect keyframes, and write `integration_report.md`.
+11. Run `validate_release_candidate.py`; do not call the video complete unless it writes PASS acceptance reports.
 
 Prefer the smallest board count that communicates the idea: normally 1-2 boards for a 30-60 second video, and more only when the content clearly requires it. Treat bundled examples as test fixtures, not board-count requirements.
 
@@ -113,11 +114,20 @@ sync/camera_plan.json
 sync/action_camera_qa_report.md
 sync/action_camera_qa_report.json
 integration_report.md
+v1_release_acceptance.json
+v1_release_acceptance.md
 ```
 
 Also require the B/C packages, local model-generated PNG manifest, D control package, measured narration timing, captions, HyperFrames lint/validate/inspect results, and asset identity check defined by the internal contracts.
 
 Record all PASS/WARN/FAIL results and the manual image source in `integration_report.md`. A renderer warning from a deliberately skipped render is not equivalent to real-video acceptance.
+
+Finish with:
+
+```bash
+python3 <RUNTIME>/whiteboard-infographic-pipeline-orchestrator/scripts/validate_release_candidate.py \
+  --project-dir <PROJECT>
+```
 
 ## Additional reference
 

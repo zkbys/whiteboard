@@ -27,7 +27,9 @@ project-output/
 ├── audio/
 ├── sync/
 ├── video/
-└── integration_report.md
+├── integration_report.md
+├── v1_release_acceptance.json
+└── v1_release_acceptance.md
 ```
 
 Use `board_source_for_e/` as D's output and E's input. E may write its own `project-output/board/` copy.

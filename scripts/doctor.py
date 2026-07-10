@@ -27,6 +27,7 @@ MODULE_FILES = (
     "whiteboard-infographic-pipeline-orchestrator/references/runbook.md",
     "whiteboard-infographic-pipeline-orchestrator/references/contracts.md",
     "whiteboard-infographic-pipeline-orchestrator/scripts/generate_board_images.py",
+    "whiteboard-infographic-pipeline-orchestrator/scripts/validate_release_candidate.py",
 )
 SKILL_FILES = (
     "SKILL.md",

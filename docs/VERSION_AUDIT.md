@@ -20,6 +20,10 @@ Clean installation regression coverage includes Codex, Claude Code, both targets
 
 Automatic runs write `image_generation_report.json`, atomically persist validated PNGs, reuse existing valid images on resume, and automatically continue into `board_asset_manifest.json`. API-key presence alone does not select a paid provider. The implementation is covered with a local mock HTTP server and command fixture, not a live billable API call.
 
+## Executable V1 release gate
+
+`whiteboard-infographic-pipeline-orchestrator/scripts/validate_release_candidate.py` is the final delivery gate. It checks probeable video/audio duration, image generation and three-stage asset identity, D/renderer board agreement, completed HyperFrames checks, strict action/camera QA, keyframe counts/files, and the required editable project outputs. Healthy and adversarial fixtures run in temporary directories through `npm run check:release-candidate`; no generated media is committed.
+
 ## Latest Code Baseline
 
 | Area | Latest source used | Reason |

@@ -41,7 +41,8 @@ whiteboard-infographic-pipeline-orchestrator/
 │   ├── validate_orchestrator_inputs.py
 │   ├── generate_board_images.py
 │   ├── write_board_asset_manifest.py
-│   └── check_asset_identity.py
+│   ├── check_asset_identity.py
+│   └── validate_release_candidate.py
 └── examples/
     ├── minimal-topic-input.txt
     ├── expected-output-tree.md
