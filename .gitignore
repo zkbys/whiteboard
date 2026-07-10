@@ -6,6 +6,7 @@ node_modules/
 
 runs/
 orchestrator-runs/
+whiteboard-runs/
 integration-*/
 optimization-*/
 whiteboard-infographic-prototype-v*/

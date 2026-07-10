@@ -10,16 +10,22 @@ If the user only says:
 
 Treat that as a complete trigger. Extract the topic and duration, create a run folder automatically, and write the request into `topic_input.txt`.
 
-Default run folder:
+Default run folder through the public `whiteboard-video` Skill:
+
+```text
+<current-working-directory>/whiteboard-runs/YYYYMMDD-HHMMSS-<topic-slug>/
+```
+
+Direct repository development may continue to use the ignored legacy folder:
 
 ```text
 <repo-root>/orchestrator-runs/YYYYMMDD-HHMM-<topic-slug>/
 ```
 
-Default topic input:
+Default topic input through `whiteboard-video`:
 
 ```text
-<repo-root>/orchestrator-runs/YYYYMMDD-HHMM-<topic-slug>/topic_input.txt
+<current-working-directory>/whiteboard-runs/YYYYMMDD-HHMMSS-<topic-slug>/topic_input.txt
 ```
 
 Then continue with local setup validation. Do not ask the user to create a file manually unless the request has no usable topic.
@@ -230,6 +236,7 @@ audio/captions.srt
 sync/action_timing.json
 sync/camera_plan.json
 sync/action_camera_qa_report.md
+sync/action_camera_qa_report.json
 video/hyperframes/
 video/preview.mp4
 video/keyframes/contact_sheet_start.jpg

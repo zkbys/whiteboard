@@ -27,7 +27,13 @@ Extract:
 - `targetDurationSec`: if the user says `30-60秒`, keep B's normal 30-60 second range and default target to about 45 seconds.
 - `style`: default to `IP孵化/商业认知/AI认知类短视频` unless the user states another style.
 
-Create a run folder automatically under the workspace:
+When this internal module is called through the public `whiteboard-video` Skill, create the run folder under the user's current working directory:
+
+```text
+whiteboard-runs/YYYYMMDD-HHMMSS-<topic-slug>/
+```
+
+For direct repository development runs, the legacy ignored location remains available:
 
 ```text
 orchestrator-runs/YYYYMMDD-HHMM-<topic-slug>/
@@ -46,7 +52,7 @@ Then run the normal pipeline using that file as `--topic-input` and the run fold
 Required:
 
 - Either a natural-language user request containing the topic, or a topic/source-script text file.
-- A project output directory for one run. If the user does not provide one, create it automatically under `orchestrator-runs/`.
+- A project output directory for one run. Through `whiteboard-video`, default to `<current-working-directory>/whiteboard-runs/`; direct repository development may use ignored `orchestrator-runs/`.
 - The local module Skill folders in the same workspace:
   - `ip-cognition-script-polisher/`
   - `ip-hand-drawn-infographic-planner/`
@@ -85,6 +91,7 @@ project-output/
 ├── sync/action_timing.json
 ├── sync/camera_plan.json
 ├── sync/action_camera_qa_report.md
+├── sync/action_camera_qa_report.json
 ├── board_source_for_e/
 │   ├── board_index.json
 │   ├── combined_motion_plan.json
@@ -158,7 +165,7 @@ A run is complete only when all of these are true:
 - C validator passes on `infographic/`.
 - `board_asset_manifest.json` uses `asset.kind=file` for local model PNGs and references `images/*.model-generated.png`.
 - D produces `board_source_for_e/board_index.json`, `combined_motion_plan.json`, and per-board `board_manifest.json`, `annotation_manifest.json`, `motion_plan.json`, and `board.png`.
-- E produces `audio/narration.wav`, `audio/voiceover_timing.json`, `audio/captions.srt`, `sync/camera_plan.json`, `sync/action_camera_qa_report.md`, `video/hyperframes/`, `video/preview.mp4`, `video/keyframes/`, and `video/renderer_report.json`.
+- E produces `audio/narration.wav`, `audio/voiceover_timing.json`, `audio/captions.srt`, `sync/camera_plan.json`, `sync/action_camera_qa_report.md`, `sync/action_camera_qa_report.json`, `video/hyperframes/`, `video/preview.mp4`, `video/keyframes/`, and `video/renderer_report.json`.
 - HyperFrames lint/validate/inspect have no blocking errors.
 - MP4 duration and measured timing are within E's threshold.
 - `audio/word_timing.json` contains cue token spans, `sync/action_timing.json` exists, and most actions use `anchorRatioSource=sync/action_timing.json`; low-confidence matches, rhythm compression, bbox issues, camera zoom thresholds, and missing keyframe artifacts are reported instead of hidden.

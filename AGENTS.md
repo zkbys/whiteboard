@@ -4,10 +4,10 @@ This file is the first thing a new Codex/agent thread should read before editing
 
 ## Canonical Workspace
 
-Work only in this repository:
+Work only in the current Git checkout. Resolve it instead of assuming a developer-machine path:
 
-```text
-/Users/yanzhengkai/Documents/AI剪辑skill/ai-whiteboard-infographic-pipeline
+```bash
+git rev-parse --show-toplevel
 ```
 
 Remote:
@@ -29,14 +29,14 @@ Do not edit or publish files from the parent experimental workspace unless the u
 ## Start Every New Thread With
 
 ```bash
-cd "/Users/yanzhengkai/Documents/AI剪辑skill/ai-whiteboard-infographic-pipeline"
+cd "$(git rev-parse --show-toplevel)"
 git status --short --branch
 git pull --ff-only
 ```
 
 Then read, as needed:
 
-- `README.zh-CN.md` or `README.md`
+- `README.md` or `README.en.md`
 - `docs/PROJECT_STRUCTURE.md`
 - `docs/ARCHITECTURE.md`
 - `docs/VERSION_AUDIT.md`
@@ -44,6 +44,8 @@ Then read, as needed:
 - the matching `references/contracts.md` when changing JSON contracts or paths
 
 ## Current Pipeline Boundary
+
+The only user-facing Skill is `skills/whiteboard-video/`. It bundles the following directories as internal runtime modules during installation; do not install them as six separate user Skills.
 
 Keep the module responsibilities separated:
 
@@ -53,6 +55,17 @@ Keep the module responsibilities separated:
 - D `hand-drawn-infographic-video-board`: board PNG control layer, bbox calibration, annotation manifests, and motion plans.
 - E `whiteboard-infographic-video-renderer`: narration, measured timing, tokenized action sync, HyperFrames, preview MP4, and keyframes.
 - Orchestrator `whiteboard-infographic-pipeline-orchestrator`: full run order, handoff rules, validation, and acceptance reporting.
+
+## Installation Contract
+
+- Codex user Skills install to `$HOME/.agents/skills/whiteboard-video/` by default.
+- Claude Code user Skills install to `~/.claude/skills/whiteboard-video/` by default.
+- Keep the installed package self-contained under the public Skill directory, including `runtime/`.
+- Do not require the original Git clone after installation.
+- Do not make symlinks the only installation mechanism.
+- Do not overwrite a same-name directory without this project's valid `installation.json` marker.
+- Keep generated user projects outside the managed installation, defaulting to `<cwd>/whiteboard-runs/`.
+- Preserve the `interactive` PNG handoff warning; do not advertise `auto` until a real provider writes PNGs directly.
 
 ## Latest-Version Guardrails
 
@@ -81,6 +94,8 @@ Before committing:
 
 ```bash
 npm run check
+python3 scripts/install.py --help
+python3 scripts/doctor.py --help
 find . -name ".DS_Store" -delete
 find . -name "__pycache__" -type d -prune -exec rm -rf {} +
 find . -name "*.pyc" -delete
@@ -123,7 +138,7 @@ whiteboard-infographic-video-renderer/examples/input/board/board.png
 When changing behavior or contracts, update the docs in the same commit:
 
 - root `README.md`
-- root `README.zh-CN.md`
+- root `README.en.md`
 - `docs/ARCHITECTURE.md`
 - `docs/VERSION_AUDIT.md` when changing baseline/version assumptions
 - relevant module `SKILL.md`
@@ -146,5 +161,6 @@ For module-specific changes, also run the closest validator or dry run:
 - E action/camera QA regression: `npm run check:renderer-qa`
 - E adversarial action/camera QA regression: `npm run check:renderer-adversarial`
 - E optional real render regression: `npm run check:renderer-real`
+- Public Skill validation: `python3 -m unittest tests/test_install.py`
 
 Do not report a pipeline run as successful unless the relevant acceptance artifacts exist and the validation results are recorded.

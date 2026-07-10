@@ -9,12 +9,26 @@ This repository contains the current public AI whiteboard infographic pipeline. 
 | `AGENTS.md` | Required operating instructions for new agent threads. |
 | `CLAUDE.md` | Pointer for tools that read `CLAUDE.md`; delegates to `AGENTS.md`. |
 | `CONTRIBUTING.md` | Human-facing development and GitHub push workflow. |
-| `README.md` | English project overview. |
-| `README.zh-CN.md` | Chinese project overview. |
+| `README.md` | Default Chinese install-and-use entry. |
+| `README.en.md` | English install-and-use entry. |
+| `README.zh-CN.md` | Compatibility pointer to the default Chinese README. |
 | `package.json` | Validation commands. |
 | `.gitignore` | Keeps generated runs, media, caches, and local artifacts out of Git. |
 
-## Pipeline Modules
+## Public Skill and product tooling
+
+| Path | Purpose |
+| --- | --- |
+| `skills/whiteboard-video/SKILL.md` | The only user-facing Skill and natural-language video entrypoint. |
+| `skills/whiteboard-video/agents/openai.yaml` | Optional Codex/ChatGPT display metadata. |
+| `skills/whiteboard-video/scripts/doctor.py` | Location-independent wrapper for the bundled doctor. |
+| `scripts/install.py` | Copy-based Codex/Claude installer with dry-run, ownership, idempotence, and upgrade protection. |
+| `scripts/doctor.py` | PASS/WARN/FAIL checks for installation, render dependencies, output, and image mode. |
+| `tests/test_install.py` | Temporary-directory clean installation and collision/doctor regression tests. |
+
+## Internal Pipeline Modules
+
+The installer copies these directories below `whiteboard-video/runtime/`. They are implementation modules, not separately installed public Skills.
 
 | Directory | Stage | Owns |
 | --- | --- | --- |
@@ -43,6 +57,7 @@ Generated outputs belong in ignored run folders, usually:
 ```text
 runs/
 orchestrator-runs/
+whiteboard-runs/
 ```
 
 They should not be committed unless deliberately converted into a small, public, reusable fixture.

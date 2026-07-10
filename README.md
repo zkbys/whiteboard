@@ -1,133 +1,211 @@
-# AI Whiteboard Infographic Pipeline
+# Whiteboard Video
 
-[中文说明](README.zh-CN.md) | English
+中文 | [English](README.en.md)
 
-A modular Codex Skill pipeline for generating reviewable AI whiteboard infographic explainer videos.
+把一个主题、观点或粗稿，变成 30-60 秒的 AI 白板信息图讲解视频：同时保留可编辑 HyperFrames 工程、真实音频 timing、鼠标动作/镜头 QA、关键帧和最终验收报告。
 
-The pipeline is designed for staged, human-reviewable production rather than one-shot MP4 generation. It keeps script, semantic board planning, image prompts, model PNG assets, board-control coordinates, measured audio timing, editable HyperFrames output, keyframes, and final acceptance reports as separate artifacts.
+> 对外只有一个 Skill：`whiteboard-video`。B / C / Creator / D / E 依然作为内部流水线模块，用户无需分别安装或理解它们。
 
-## Latest Baseline
+## 已有的真实验收证据
 
-This repository is based on the latest local pipeline state, not the older prototype folders.
+最新本地端到端样例完成了 2 张白板、6 段口播、9 个批注动作，实际视频时长 42.58 秒；音频 timing 偏差 0.045 秒，action/camera QA 为 `pass`，9 个动作全部匹配，资产一致性验证通过。仓库不提交生成的视频、音频或模型图片，详细验收记录见 [真实端到端样例](docs/REAL_E2E_SAMPLE.md)。
 
-Latest code baseline:
+## 让 Codex 安装
 
-- `whiteboard-infographic-pipeline-orchestrator/SKILL.md` updated with calibration and token sync requirements.
-- `hand-drawn-infographic-video-board/scripts/create_calibration_tool.py` for browser-based bbox calibration.
-- `hand-drawn-infographic-video-board/scripts/generate_board_package.py` with calibration-file support.
-- `whiteboard-infographic-video-renderer/scripts/render_multi_board_project.mjs` with `audio/word_timing.json`, `sync/action_timing.json`, renderer-level action rhythm, `sync/camera_plan.json`, and action/camera QA reports.
-
-Do not publish old folders such as `whiteboard-infographic-prototype-v0.*`, `integration-smoke-test-*`, raw audio, raw videos, or generated run outputs as the main package.
-
-## Pipeline Stages
+把下面这段话原样发给 Codex：
 
 ```text
-Topic or rough script
-  -> B ip-cognition-script-polisher
-  -> C ip-hand-drawn-infographic-planner
-  -> hand-drawn-infographic-creator
-  -> manual model PNG handoff
-  -> D hand-drawn-infographic-video-board
-  -> E whiteboard-infographic-video-renderer
+请安装这个项目：https://github.com/zkbys/whiteboard.git
+
+请克隆到临时目录，阅读根 README，然后运行：
+python3 scripts/install.py --target codex
+
+安装后请运行：
+python3 "$HOME/.agents/skills/whiteboard-video/scripts/doctor.py" --json
+
+请根据 doctor 的 install / render / output / image 分层结果，明确告诉我安装是否成功、渲染依赖是否齐全、是否需要重启 Codex，以及当前是 interactive 还是 auto 图片模式。不要使用 sudo。
+```
+
+Codex 的默认用户安装位置是：
+
+```text
+$HOME/.agents/skills/whiteboard-video/
+```
+
+Codex 通常会自动发现新 Skill；如果 `$whiteboard-video` 没有出现，再重启 Codex 或新建任务。安装位置和发现行为依据 [OpenAI Codex Skills 官方文档](https://learn.chatgpt.com/docs/build-skills)。
+
+## 让 Claude Code 安装
+
+把下面这段话原样发给 Claude Code：
+
+```text
+请安装这个项目：https://github.com/zkbys/whiteboard.git
+
+请克隆到临时目录，阅读根 README，然后运行：
+python3 scripts/install.py --target claude
+
+安装后请运行：
+python3 "$HOME/.claude/skills/whiteboard-video/scripts/doctor.py" --json
+
+请根据 doctor 的 install / render / output / image 分层结果，明确告诉我安装是否成功、渲染依赖是否齐全、是否需要重启 Claude Code，以及当前是 interactive 还是 auto 图片模式。不要使用 sudo。
+```
+
+Claude Code 的默认用户安装位置是：
+
+```text
+~/.claude/skills/whiteboard-video/
+```
+
+如果 `~/.claude/skills` 在当前会话启动时已存在，Claude Code 可以热加载新 Skill；如果这个顶层目录是安装时才首次创建，需重启 Claude Code。详见 [Anthropic Claude Code Skills 官方文档](https://code.claude.com/docs/en/skills)。
+
+## 命令行直接安装
+
+Codex：
+
+```bash
+git clone https://github.com/zkbys/whiteboard.git
+cd whiteboard
+python3 scripts/install.py --target codex
+python3 "$HOME/.agents/skills/whiteboard-video/scripts/doctor.py" --json
+```
+
+Claude Code：
+
+```bash
+git clone https://github.com/zkbys/whiteboard.git
+cd whiteboard
+python3 scripts/install.py --target claude
+python3 "$HOME/.claude/skills/whiteboard-video/scripts/doctor.py" --json
+```
+
+同时安装到两端：
+
+```bash
+python3 scripts/install.py --target both
+```
+
+预览而不写入：
+
+```bash
+python3 scripts/install.py --target both --dry-run
+```
+
+重复安装同一版本会安全返回 `already current`。当 Git 仓库内容变化后，安装器会要求显式升级：
+
+```bash
+git pull --ff-only
+python3 scripts/install.py --target codex --upgrade
+```
+
+安装器不使用 sudo，不依赖 symlink，不覆盖没有本项目 `installation.json` 标记的同名目录。安装包内含完整内部 runtime，删除原始 Git clone 后仍可用。
+
+## 生成第一个视频
+
+Codex 中直接说：
+
+```text
+请使用 whiteboard-video skill 帮我做一个视频，我想表达的主题为“AI 工具越多，普通人反而越低效”，时长在 30-60 秒左右。
+```
+
+Claude Code 中可以说同样的自然语言，或显式调用：
+
+```text
+/whiteboard-video 主题为“AI 工具越多，普通人反而越低效”，时长 30-60 秒。
+```
+
+Skill 默认把项目写到当前工作目录的 `whiteboard-runs/` 中，而不是写入受管理的 Skill 安装目录。
+
+## 最终会得到什么
+
+一次通过验收的运行至少包含：
+
+```text
+whiteboard-runs/<run-id>/
+├── script/
+├── infographic/
+├── images/*.model-generated.png
+├── board_asset_manifest.json
+├── board_source_for_e/
+├── audio/
+├── sync/
+│   ├── action_timing.json
+│   ├── camera_plan.json
+│   ├── action_camera_qa_report.md
+│   └── action_camera_qa_report.json
+├── video/
+│   ├── preview.mp4
+│   ├── hyperframes/
+│   ├── keyframes/
+│   └── renderer_report.json
+└── integration_report.md
+```
+
+## 一次性环境要求和 doctor
+
+- Python 3.10+
+- Node.js 20+
+- `ffmpeg`
+- `ffprobe`
+- `edge-tts`
+- `npx`
+- 可下载或已缓存的 `hyperframes@0.6.99`
+
+运行：
+
+```bash
+python3 scripts/doctor.py
+python3 scripts/doctor.py --json
+```
+
+doctor 分层报告：
+
+| 分类 | 含义 |
+| --- | --- |
+| `install` | 公共 Skill 和内部 B/C/Creator/D/E/orchestrator 是否完整 |
+| `render` | Python、Node、ffmpeg、ffprobe、edge-tts、npx 和 HyperFrames 是否可用 |
+| `output` | 视频项目输出目录是否可写 |
+| `image` | 当前图片模式是 `interactive` 还是 `auto` |
+
+`install=PASS` 但 `render=FAIL` 表示 Skill 已正确安装，但尚不能完成真实渲染。`image=WARN` 是当前 interactive 版本的预期状态，不代表安装失败。
+
+## 当前已知限制
+
+当前发布的是可安装的 `interactive` 版本。如果图片工具只返回预览图，Agent 会生成所有白板图后暂停一次，要求用户将 PNG 保存到它列出的确切路径。图片齐全后，流水线继续 D/E、渲染、关键帧和 QA。
+
+当前不会：
+
+- 搜索隐藏预览缓存。
+- 伪造图片 URL。
+- 用占位图或 D 生成的 SVG 冒充模型 PNG。
+- 声称从主题到视频已经实现零人工介入。
+
+`auto` 模式需要未来增加稳定 image provider/API、API key 配置和自动 PNG 落盘。
+
+## 开发者：内部流水线
+
+```text
+用户主题或粗稿
+  -> B 口播打磨
+  -> C 语义信息图规划
+  -> Creator 生图提示词
+  -> interactive 模型 PNG 交接
+  -> D 白板控制层与校准
+  -> E 真实 timing、HyperFrames、MP4、关键帧与 QA
   -> integration_report.md
 ```
 
-## Modules
-
-| Module | Responsibility | Key outputs |
-| --- | --- | --- |
-| `ip-cognition-script-polisher` | Preserve the user's stance and produce a 30-60s six-part voiceover package. | `polished_voiceover.md`, `voiceover_segments.json`, `visual_beats.json` |
-| `ip-hand-drawn-infographic-planner` | Convert script beats into semantic board plans and image prompts. | `infographic_plan.json`, `board_specs/*.json`, `image_prompts/*.prompt.md` |
-| `hand-drawn-infographic-creator` | Turn board prompts into final model-ready image prompts and review notes. | `creator_outputs/*.md`, `imagegen_prompts/*.txt` |
-| `hand-drawn-infographic-video-board` | Convert board PNGs and specs into exact control-layer manifests. | `board_manifest.json`, `annotation_manifest.json`, `motion_plan.json`, `combined_motion_plan.json` |
-| `whiteboard-infographic-video-renderer` | Generate narration, measured timing, renderer action rhythm, camera strategy, HyperFrames, MP4 preview, keyframes, and QA reports. | `audio/`, `sync/`, `video/hyperframes/`, `video/preview.mp4` |
-| `whiteboard-infographic-pipeline-orchestrator` | Enforce the full run order and acceptance checks. | `integration_report.md` |
-
-## Requirements
-
-- Python 3.10+.
-- Node.js 20+.
-- `ffmpeg` and `ffprobe` on `PATH`.
-- `edge-tts` CLI for narration generation.
-- Network access for `npx --yes hyperframes@0.6.99` unless HyperFrames is already cached.
-- An image generation tool that can produce or export PNG files.
-
-## Quick Start
-
-Validate the local layout:
-
-```bash
-python3 whiteboard-infographic-pipeline-orchestrator/scripts/validate_orchestrator_inputs.py \
-  --workspace . \
-  --topic-input whiteboard-infographic-pipeline-orchestrator/examples/minimal-topic-input.txt \
-  --project-dir runs/example-output
-```
-
-Run the pipeline through Codex using the orchestrator skill:
-
-```text
-请使用白板总编排skill帮我做一个视频，我想表达的主题为“AI 工具越多，普通人反而越低效”，时长在30-60秒左右
-```
-
-The image-generation step has a required pause if the tool only exposes preview images. Save each generated PNG as:
-
-```text
-runs/example-output/images/board-01.model-generated.png
-runs/example-output/images/board-02.model-generated.png
-```
-
-Then continue with manifest writing, optional calibration, D package generation, E rendering, keyframe inspection, and asset identity checks.
-
-## Current Acceptance Bar
-
-A current run is complete only when it produces:
-
-- Valid B and C outputs.
-- `board_asset_manifest.json` with local `file` PNG assets.
-- Optional `calibration/*.element_bboxes.json` when PNG layout needs manual alignment.
-- D output under `board_source_for_e/`.
-- E output with `audio/voiceover_timing.json`, `audio/word_timing.json`, `sync/action_timing.json`, `sync/camera_plan.json`, `sync/action_camera_qa_report.md`, `video/hyperframes/`, `video/preview.mp4`, `video/keyframes/`, and `video/renderer_report.json`.
-- Passing HyperFrames `lint`, `validate`, and `inspect` checks, allowing only documented non-blocking warnings.
-- Passing model-PNG identity check from `images/` to D `board.png` to HyperFrames board assets.
-
-## Development Validation
-
-Run the repository checks before committing:
+开发和贡献前请阅读 [AGENTS.md](AGENTS.md)、[项目结构](docs/PROJECT_STRUCTURE.md)、[架构契约](docs/ARCHITECTURE.md)和 [版本审计](docs/VERSION_AUDIT.md)。所有改动必须运行：
 
 ```bash
 npm run check
 ```
 
-`npm run check` includes renderer QA smoke tests that build temporary multi-board fixtures outside the repository. The healthy fixture verifies `sync/action_timing.json`, `sync/camera_plan.json`, `sync/action_camera_qa_report.md`, and the timing-updated motion plan. The adversarial fixture deliberately injects an unmatched spoken anchor, out-of-bounds bbox, camera zoom pressure, and skipped keyframes, then asserts the QA report catches those problems.
-
-To run only the adversarial QA acceptance check:
-
-```bash
-npm run check:renderer-adversarial
-```
-
-For slower renderer verification with deterministic fixture timing/audio, HyperFrames checks, MP4 rendering, and action keyframe extraction:
+较慢的真实渲染回归：
 
 ```bash
 npm run check:renderer-real
 ```
 
-This also runs in a temporary directory and removes generated media on success.
-
-Use adversarial review after both `npm run check` and `npm run check:renderer-real` pass, before merging or treating a generated project as accepted.
-
-## Documentation
-
-- [Agent Instructions](AGENTS.md)
-- [Contributing](CONTRIBUTING.md)
-- [Project Structure](docs/PROJECT_STRUCTURE.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [Version Audit](docs/VERSION_AUDIT.md)
-- [Real End-to-End Sample](docs/REAL_E2E_SAMPLE.md)
-- [Open Source Checklist](docs/OPEN_SOURCE_CHECKLIST.md)
-- [Orchestrator Runbook](whiteboard-infographic-pipeline-orchestrator/references/runbook.md)
-- [Pipeline Contracts](whiteboard-infographic-pipeline-orchestrator/references/contracts.md)
-
 ## License
 
-MIT. Change `LICENSE` before publishing if you need a different license or copyright holder.
+MIT。

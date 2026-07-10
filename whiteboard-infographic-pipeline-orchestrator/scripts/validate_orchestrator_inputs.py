@@ -67,6 +67,11 @@ def validate(args: argparse.Namespace) -> dict[str, Any]:
                 add_issue(errors, "skill_missing", f"Required Skill directory missing: {skill_dir}")
                 continue
             for rel_path in required_files:
+                if rel_path == "SKILL.md" and any(
+                    (skill_dir / candidate).is_file()
+                    for candidate in ("SKILL.md", "INTERNAL_SKILL.md")
+                ):
+                    continue
                 file_path = skill_dir / rel_path
                 if not file_path.exists() or not file_path.is_file():
                     add_issue(errors, "skill_file_missing", f"Required file missing: {file_path}")

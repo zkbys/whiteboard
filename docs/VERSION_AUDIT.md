@@ -2,6 +2,14 @@
 
 This package was assembled from the latest usable local pipeline state.
 
+## Product installation baseline
+
+The public product surface is now `skills/whiteboard-video/SKILL.md`. `scripts/install.py` installs a complete copy to the current official user Skill locations for Codex (`$HOME/.agents/skills`) and Claude Code (`~/.claude/skills`). The installed runtime contains B/C/Creator/D/E/orchestrator, so it remains usable after the source clone is removed.
+
+`scripts/doctor.py` distinguishes installation readiness, render readiness, output writability, and image automation. The current image status is intentionally `WARN` in `interactive` mode because preview-only image tools still require one manual PNG save handoff. `auto` is not claimed or implemented.
+
+Clean installation regression coverage includes Codex, Claude Code, both targets, same-version idempotence, explicit upgrade, unmanaged-directory refusal, controlled missing dependencies, paths with spaces/non-ASCII characters, and scans for developer absolute paths or generated media.
+
 ## Latest Code Baseline
 
 | Area | Latest source used | Reason |
@@ -58,6 +66,7 @@ The current multi-board renderer line adds these post-baseline controls:
 - `sync/action_camera_qa_report.md` and `.json` summarize sync source/fallbacks, rhythm compression, bbox boundary checks, camera zoom thresholds, and keyframe artifact completeness.
 - `npm run check` includes `check:renderer-qa`, which builds a temporary healthy fixture and asserts the action rhythm, camera plan, renderer report, and QA contract without committing generated media.
 - `npm run check` also includes `check:renderer-adversarial`, which builds a temporary bad fixture and asserts QA detects sync fallback, bbox failures, camera zoom warnings, and skipped keyframes.
+- `npm run check` includes `check:install`, which builds and diagnoses self-contained Codex and Claude Code installations in system temporary directories.
 - `npm run check:renderer-real` is available as a slower optional regression for deterministic fixture audio, HyperFrames lint/validate/inspect, MP4 render, keyframe extraction, contact sheets, and QA artifact completeness.
 
 This delta is implemented in the multi-board E path. The legacy single-board renderer remains a compatibility path and is not the acceptance target for this optimization.

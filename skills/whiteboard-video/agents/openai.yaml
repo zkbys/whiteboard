@@ -1,0 +1,4 @@
+interface:
+  display_name: "Whiteboard Video"
+  short_description: "Create editable AI whiteboard explainer videos"
+  default_prompt: "Use $whiteboard-video to turn my topic into a 30-60 second editable whiteboard explainer video."

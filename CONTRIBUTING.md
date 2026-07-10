@@ -2,10 +2,12 @@
 
 ## Repository
 
-Canonical local path:
+Clone the repository and resolve its root instead of assuming a developer-machine path:
 
-```text
-/Users/yanzhengkai/Documents/AI剪辑skill/ai-whiteboard-infographic-pipeline
+```bash
+git clone https://github.com/zkbys/whiteboard.git
+cd whiteboard
+git rev-parse --show-toplevel
 ```
 
 GitHub remote:
@@ -17,7 +19,7 @@ https://github.com/zkbys/whiteboard.git
 ## Recommended Workflow
 
 ```bash
-cd "/Users/yanzhengkai/Documents/AI剪辑skill/ai-whiteboard-infographic-pipeline"
+cd "$(git rev-parse --show-toplevel)"
 git pull --ff-only
 git checkout -b codex/<feature-name>
 ```
@@ -59,6 +61,7 @@ git push origin main
 
 | Need to change | Work here |
 | --- | --- |
+| Public Skill, installation, doctor, or first-use UX | `skills/whiteboard-video/`, `scripts/`, root READMEs |
 | Script polish, six-segment voiceover package | `ip-cognition-script-polisher/` |
 | Semantic board planning and image prompts | `ip-hand-drawn-infographic-planner/` |
 | Final image-generation prompt bridge | `hand-drawn-infographic-creator/` |
