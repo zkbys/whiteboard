@@ -2,11 +2,54 @@
 
 中文 | [English](README.en.md)
 
+**把一个主题、观点或粗稿，变成 30-60 秒的 AI 白板信息图讲解视频。** 同时保留可编辑 HyperFrames 工程、真实音频 timing、鼠标动作/镜头 QA、关键帧和最终验收报告。
+
+> 对外只有一个 Skill：`whiteboard-video`。B / C / Creator / D / E 依然作为内部流水线模块，用户无需分别安装或理解它们。
+
+## 🚀 30 秒快速开始
+
+**给 Codex 发这句话：**
+
+```
+请安装这个项目：https://github.com/zkbys/whiteboard.git
+
+阅读 README 后运行：
+python3 scripts/install.py --target codex
+python3 "$HOME/.agents/skills/whiteboard-video/scripts/doctor.py" --json
+
+然后帮我做一个视频，主题是“AI 工具越多，普通人反而越低效”，时长 30-60 秒。
+```
+
+**给 Claude Code 发这句话：**
+
+```
+请安装这个项目：https://github.com/zkbys/whiteboard.git
+
+阅读 README 后运行：
+python3 scripts/install.py --target claude
+python3 "$HOME/.claude/skills/whiteboard-video/scripts/doctor.py" --json
+
+然后帮我做一个视频，主题是“AI 工具越多，普通人反而越低效”，时长 30-60 秒。
+```
+
+视频会生成在当前目录的 `whiteboard-runs/<run-id>/video/preview.mp4`。
+
+中文 | [English](README.en.md)
+
 把一个主题、观点或粗稿，变成 30-60 秒的 AI 白板信息图讲解视频：同时保留可编辑 HyperFrames 工程、真实音频 timing、鼠标动作/镜头 QA、关键帧和最终验收报告。
 
 > 对外只有一个 Skill：`whiteboard-video`。B / C / Creator / D / E 依然作为内部流水线模块，用户无需分别安装或理解它们。
 
 ## 已有的真实验收证据
+
+| 验证 | 日期 | 结果 | 说明 |
+|------|------|------|------|
+| Loop 1 — Codex 端到端 | 2026-07-05 | ✅ PASS | 2 张白板、6 段口播、9 个批注动作，视频 42.58 秒，timing 偏差 0.045 秒 |
+| **Loop 2 — Kimi 独立运行** | **2026-07-12** | **✅ PASS** | **脱离 Codex/Claude，仅用 Kimi + ffmpeg + edge-tts 完成完整 pipeline，视频 56.08 秒，v1 验收器 11/11 通过** |
+
+> 🔥 **关键结论：whiteboard-video 不绑定任何特定 Agent。** 你可以在 Codex、Claude Code、Kimi 或本地命令行中安装并运行。
+
+详细验收记录见 [真实端到端样例](docs/REAL_E2E_SAMPLE.md) 和 [Loop 2 独立验证报告](LOOP2_ACCEPTANCE_REPORT.md)。
 
 最新本地端到端样例完成了 2 张白板、6 段口播、9 个批注动作，实际视频时长 42.58 秒；音频 timing 偏差 0.045 秒，action/camera QA 为 `pass`，9 个动作全部匹配，资产一致性验证通过。仓库不提交生成的视频、音频或模型图片，详细验收记录见 [真实端到端样例](docs/REAL_E2E_SAMPLE.md)。
 
