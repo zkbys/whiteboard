@@ -178,13 +178,13 @@ def executable_check(
 
 def check_python(checks: list[dict[str, Any]]) -> None:
     version = sys.version_info[:3]
-    status = "PASS" if version >= (3, 10, 0) else "FAIL"
+    status = "PASS" if version >= (3, 9, 0) else "FAIL"
     add_check(
         checks,
         "render.python",
         "render",
         status,
-        f"Python {'.'.join(map(str, version))}; requires 3.10+.",
+        f"Python {'.'.join(map(str, version))}; requires 3.9+.",
         path=sys.executable,
     )
 

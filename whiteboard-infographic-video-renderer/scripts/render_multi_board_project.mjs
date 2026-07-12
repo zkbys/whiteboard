@@ -1812,7 +1812,18 @@ function runHyperframesChecks(hfDir, version) {
   assertCommand(lint, "hyperframes lint");
   const validate = runCapture("npx", npxArgs.concat(["validate"]), hfDir);
   assertCommand(validate, "hyperframes validate");
-  const inspect = runCapture("npx", npxArgs.concat(["inspect", "--samples", "16"]), hfDir);
+  let inspect = runCapture("npx", npxArgs.concat(["inspect", "--samples", "16"]), hfDir);
+  const inspectOutput = `${inspect.stdout}\n${inspect.stderr}`;
+  if (inspect.status !== 0 && inspectOutput.includes("Navigation timeout of 10000 ms exceeded")) {
+    const retry = runCapture("npx", npxArgs.concat(["inspect", "--samples", "16"]), hfDir);
+    inspect = {
+      ...retry,
+      attempts: 2,
+      stderr: `[retry after transient navigation timeout]\n${retry.stderr}`,
+    };
+  } else {
+    inspect.attempts = 1;
+  }
   assertCommand(inspect, "hyperframes inspect");
   return { lint, validate, inspect };
 }
@@ -2343,7 +2354,12 @@ async function main() {
       ? {
           lint: { status: checks.lint.status, stdout: checks.lint.stdout, stderr: checks.lint.stderr },
           validate: { status: checks.validate.status, stdout: checks.validate.stdout, stderr: checks.validate.stderr },
-          inspect: { status: checks.inspect.status, stdout: checks.inspect.stdout, stderr: checks.inspect.stderr },
+          inspect: {
+            status: checks.inspect.status,
+            attempts: checks.inspect.attempts,
+            stdout: checks.inspect.stdout,
+            stderr: checks.inspect.stderr,
+          },
         }
       : "skipped",
     durationCheck,
