@@ -23,5 +23,4 @@ visual-hammer-v*/
 *.jpeg
 
 !whiteboard-infographic-video-renderer/examples/input/board/board.png
-!assets/*.mp4
-!assets/*.jpg
+!assets/*.gif
