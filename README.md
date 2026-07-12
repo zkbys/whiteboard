@@ -5,11 +5,9 @@
 **输入一个主题，输出 30–60 秒的 AI 白板信息图讲解视频。**
 
 <p align="center">
-  <a href="https://github.com/zkbys/whiteboard/raw/main/assets/demo-1.5x.mp4">
-    <img src="https://github.com/zkbys/whiteboard/raw/main/assets/demo-poster.jpg" width="720" alt="点击播放示例视频">
-  </a>
+  <video src="https://raw.githubusercontent.com/zkbys/whiteboard/main/assets/demo.mp4" controls="controls" width="720"></video>
   <br>
-  <sub>🎬 示例视频：主题「AI 工具越多，普通人反而越低效」（已加速 1.5×，点击封面播放）</sub>
+  <sub>🎬 示例视频：主题「AI 工具越多，普通人反而越低效」（已加速 1.25×）</sub>
 </p>
 
 ## 🚀 快速开始
