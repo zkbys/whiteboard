@@ -5,9 +5,11 @@
 **Input a topic, get a 30–60 second AI whiteboard explainer video.**
 
 <p align="center">
-  <video src="https://github.com/zkbys/whiteboard/raw/main/assets/demo-1.5x.mp4" controls width="720"></video>
+  <a href="https://github.com/zkbys/whiteboard/raw/main/assets/demo-1.5x.mp4">
+    <img src="https://github.com/zkbys/whiteboard/raw/main/assets/demo-poster.jpg" width="720" alt="Click to play demo video">
+  </a>
   <br>
-  <sub>Demo: topic "More AI tools, less efficiency for regular people" (sped up 1.5×)</sub>
+  <sub>🎬 Demo: topic "More AI tools, less efficiency for regular people" (sped up 1.5×, click poster to play)</sub>
 </p>
 
 ## 🚀 Quick Start
