@@ -13,6 +13,7 @@
     "check:install": "python3 -m unittest tests/test_install.py",
     "check:image-provider": "python3 -m unittest tests/test_image_provider.py",
     "check:release-candidate": "python3 -m unittest tests/test_release_acceptance.py",
-    "check": "npm run check:python && npm run check:node && npm run check:inputs && npm run check:install && npm run check:image-provider && npm run check:release-candidate && npm run check:renderer-qa && npm run check:renderer-adversarial"
+    "check:smoke": "python3 scripts/smoke_test.py --project-dir /tmp/whiteboard-smoke-fast --fast",
+    "check": "npm run check:python && npm run check:node && npm run check:inputs && npm run check:install && npm run check:image-provider && npm run check:release-candidate && npm run check:renderer-qa && npm run check:renderer-adversarial && npm run check:smoke"
   }
 }
