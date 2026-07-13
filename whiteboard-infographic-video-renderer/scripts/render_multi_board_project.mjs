@@ -45,6 +45,55 @@ let runContext = {
 let verboseFlag = false;
 let originalArgv = [];
 let hyperframesCliArgs = null;
+const stageLog = [];
+const stageStartTimes = {};
+
+function formatDurationMs(ms) {
+  if (ms < 1000) return `${Math.round(ms)}ms`;
+  const sec = ms / 1000;
+  if (sec < 60) return `${sec.toFixed(1)}s`;
+  const min = Math.floor(sec / 60);
+  const rem = sec % 60;
+  return `${min}m${Math.round(rem)}s`;
+}
+
+function logStageStart(name, outputs = []) {
+  stageStartTimes[name] = Date.now();
+  const entry = {
+    name,
+    status: "RUNNING",
+    startTime: new Date(stageStartTimes[name]).toISOString(),
+    outputs,
+  };
+  stageLog.push(entry);
+  console.log(`[stage] ${name} START`);
+  return entry;
+}
+
+function logStageEnd(name, outputs = [], note = null) {
+  const start = stageStartTimes[name];
+  const duration = start ? Date.now() - start : 0;
+  const entry = stageLog.find((item) => item.name === name);
+  if (entry) {
+    entry.status = "PASS";
+    entry.duration = formatDurationMs(duration);
+    entry.endTime = new Date().toISOString();
+    entry.outputs = outputs.length ? outputs : entry.outputs;
+    if (note) entry.note = note;
+  }
+  console.log(`[stage] ${name} END (${formatDurationMs(duration)})`);
+  return entry;
+}
+
+function progressBar(label, value, total, width = 40) {
+  const ratio = total > 0 ? Math.min(1, Math.max(0, value / total)) : 0;
+  const filled = Math.round(width * ratio);
+  const empty = width - filled;
+  const bar = "=".repeat(filled) + ">" + " ".repeat(Math.max(0, empty - 1));
+  const pct = Math.round(ratio * 100);
+  process.stdout.write(`\r[${label}] [${bar}] ${pct}%`);
+  if (value >= total) process.stdout.write("\n");
+}
 
 function verbose(message, ...args) {
   if (!verboseFlag) return;
@@ -1084,15 +1133,16 @@ function synthesizeVoiceover({ projectDir, source, voice, audioDir }) {
   ensureDir(segmentDir);
 
   const generated = [];
+  const ttsStage = logStageStart("TTS", ["audio/narration.wav"]);
   verbose(`TTS start: ${source.segments.length} segments, voice=${voice.name}`);
   for (const [index, segment] of source.segments.entries()) {
+    progressBar("TTS", index, source.segments.length);
     const base = `${String(index + 1).padStart(2, "0")}-${cleanName(segment.id)}`;
     const mp3 = join(segmentDir, `${base}.mp3`);
     const wav = join(segmentDir, `${base}.wav`);
     const vtt = join(segmentDir, `${base}.vtt`);
     const text = segment.text || segment.caption;
 
-    console.log(`edge-tts ${segment.id} (${voice.name})`);
     run(
       "edge-tts",
       [
@@ -1122,6 +1172,7 @@ function synthesizeVoiceover({ projectDir, source, voice, audioDir }) {
       speechDuration: ffprobeDuration(wav),
     });
   }
+  progressBar("TTS", source.segments.length, source.segments.length);
 
   const concat = [];
   const timedSegments = [];
@@ -1182,6 +1233,7 @@ function synthesizeVoiceover({ projectDir, source, voice, audioDir }) {
   writeJson(join(audioDir, "voiceover_timing.json"), timing);
   writeCaptionsSrt(join(audioDir, "captions.srt"), timedSegments);
   verbose(`TTS complete: ${timing.output}, duration=${timing.totalDuration}s`);
+  logStageEnd("TTS", ["audio/narration.wav", "audio/voiceover_timing.json", "audio/captions.srt"]);
   return { timing, narrationPath, captionsPath: join(audioDir, "captions.srt") };
 }
 
@@ -2198,6 +2250,7 @@ async function main() {
   const keyframeDir = join(videoDir, "keyframes");
 
   setStep("load and validate multi-board inputs");
+  logStageStart("load-inputs", [voiceoverPath, boardIndexPath, combinedMotionPlanPath]);
   const source = readJson(voiceoverPath);
   verbose("voiceover_segments loaded");
   const boardPackage = loadBoardPackage({ boardRoot, boardIndexPath, combinedMotionPlanPath });
@@ -2205,6 +2258,7 @@ async function main() {
   validateMultiBoardInputs({ source, ...boardPackage });
   const voice = getVoice(source, args);
   verbose(`voice: ${JSON.stringify(voice)}`);
+  logStageEnd("load-inputs", [voiceoverPath, boardIndexPath, combinedMotionPlanPath]);
 
   if (dryRun) {
     console.log(
@@ -2243,6 +2297,7 @@ async function main() {
   verbose(`audio timing ready: totalDuration=${audio.timing.totalDuration}s`);
 
   setStep("build spokenAnchor timing from subtitles");
+  const timingStage = logStageStart("timing", ["audio/word_timing.json", "sync/action_timing.json"]);
   const syncDir = join(projectDir, "sync");
   ensureDir(syncDir);
   const syncTimings = buildSyncTimings({
@@ -2254,8 +2309,10 @@ async function main() {
   writeJson(join(audioDir, "word_timing.json"), syncTimings.wordTiming);
   writeJson(join(syncDir, "action_timing.json"), syncTimings.actionTiming);
   verbose(`timing generation complete: ${syncTimings.actionTiming.actions?.length || 0} actions`);
+  logStageEnd("timing", ["audio/word_timing.json", "sync/action_timing.json"]);
 
   setStep("update combined_motion_plan with measured timing");
+  const planStage = logStageStart("update-plan", ["board/combined_motion_plan.json", "sync/camera_plan.json"]);
   const timingUpdatedMotionPlan = updateCombinedMotionPlan({
     source,
     timing: audio.timing,
@@ -2276,8 +2333,10 @@ async function main() {
     boards: boardPackage.boards,
     updatedMotionPlan,
   });
+  logStageEnd("update-plan", ["board/combined_motion_plan.json", "sync/camera_plan.json"]);
 
   setStep("generate editable HyperFrames project");
+  const hfStage = logStageStart("hyperframes", ["video/hyperframes/"]);
   ensureDir(videoDir);
   const hfProject = createHyperframesProject({
     projectDir,
@@ -2288,6 +2347,7 @@ async function main() {
     version,
   });
   verbose(`HyperFrames project generated: ${hfProject.relative}`);
+  logStageEnd("hyperframes", ["video/hyperframes/"]);
 
   let checks = null;
   if (!skipChecks) {
@@ -2299,6 +2359,8 @@ async function main() {
   let durationCheck = { renderedDuration: null, timingDuration: Number(audio.timing.totalDuration), delta: null };
   if (!skipRender) {
     setStep("render continuous preview MP4");
+    const renderStage = logStageStart("render", ["video/preview.mp4"]);
+    console.log("[stage] render START");
     rmSync(previewPath, { force: true });
     renderPreview(hfDir, previewPath, version, quality, args.fps);
     verbose("render process returned; verifying output file");
@@ -2318,11 +2380,13 @@ async function main() {
     if (delta > 1.0) {
       fail(`Rendered MP4 duration mismatch exceeds 1s: video=${renderedDuration.toFixed(3)}s timing=${timingDuration.toFixed(3)}s delta=${delta.toFixed(3)}s`);
     }
+    logStageEnd("render", ["video/preview.mp4"], `duration=${renderedDuration}s`);
   }
 
   let keyframeSummary = { status: "skipped", actionCount: 0 };
   if (!skipRender && !skipKeyframes) {
     setStep("extract action start/done keyframes");
+    const keyframeStage = logStageStart("keyframes", ["video/keyframes/"]);
     rmSync(keyframeDir, { recursive: true, force: true });
     extractKeyframes(hfDir, previewPath, keyframeDir);
     const keyframeManifestPath = join(keyframeDir, "keyframe_manifest.json");
@@ -2343,9 +2407,11 @@ async function main() {
       }
     }
     verbose(`keyframes extracted: ${rows.length} actions`);
+    logStageEnd("keyframes", ["video/keyframes/keyframe_manifest.json", "video/keyframes/contact_sheet_start.jpg", "video/keyframes/contact_sheet_done.jpg"]);
   }
 
   setStep("write action and camera QA report");
+  const qaStage = logStageStart("qa", ["sync/action_camera_qa_report.json", "sync/action_camera_qa_report.md"]);
   const qaReport = buildActionCameraQa({
     projectDir,
     motionPlan: updatedMotionPlan,
@@ -2358,6 +2424,7 @@ async function main() {
   writeJson(join(syncDir, "action_camera_qa_report.json"), qaReport.json);
   writeFileSync(join(syncDir, "action_camera_qa_report.md"), qaReport.markdown);
   verbose(`QA report written: status=${qaReport.summary.status}`);
+  logStageEnd("qa", ["sync/action_camera_qa_report.json", "sync/action_camera_qa_report.md"], `status=${qaReport.summary.status}`);
 
   const scriptPath = fileURLToPath(import.meta.url);
   const scriptDir = dirname(scriptPath);
@@ -2462,8 +2529,26 @@ async function main() {
 
   writeJson(join(videoDir, "renderer_report.json"), report);
   writeFileSync(runContext.acceptancePath, buildAcceptanceReport(report));
+
+  const runSummary = {
+    totalDuration: formatDurationMs(Date.now() - scriptStartTime),
+    stages: stageLog.map((stage) => ({
+      name: stage.name,
+      status: stage.status,
+      duration: stage.duration || null,
+      outputs: stage.outputs || [],
+    })),
+    actionCount: qaReport.summary.actionCount,
+    videoDuration: durationCheck.renderedDuration ?? durationCheck.timingDuration ?? null,
+    qaResult: qaReport.summary.status,
+    limitations: [],
+  };
+  writeJson(join(projectDir, "run_summary.json"), runSummary);
   console.log(JSON.stringify(report.outputs, null, 2));
+  console.log(`\nrun_summary.json written: ${join(projectDir, "run_summary.json")}`);
 }
+
+let scriptStartTime = Date.now();
 
 main().catch((error) => {
   const failedPath = runContext.acceptancePath || "<unknown>";
