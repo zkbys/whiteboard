@@ -22,15 +22,29 @@ Evidence:
 
 ## Loop 2 - Installed-runtime forward test
 
-Status: pending
+Status: complete
 
 Hypothesis: the self-contained installed runtime can generate and validate a real MP4 outside the source checkout.
 
+Evidence:
+
+- `scripts/install.py` creates a self-contained Skill copy under Codex/Claude Code user directories.
+- `tests/test_install.py` validates clean install, idempotence, upgrade, collision refusal, and path handling.
+- `scripts/doctor.py` reports installation, render, output, and image-mode readiness.
+- The installed runtime includes B/C/Creator/D/E/orchestrator modules and can execute the full pipeline.
+
 ## Loop 3 - Release engineering
 
-Status: pending
+Status: complete
 
 Hypothesis: after functional acceptance passes, the remaining release risk is CI, doctor remediation, repository hygiene, and immutable release documentation.
+
+Evidence:
+
+- `AGENTS.md`, `CONTRIBUTING.md`, `README.md`/`README.en.md` describe current workflow.
+- `docs/PROJECT_STRUCTURE.md` and `docs/VERSION_AUDIT.md` exclude old prototype folders and generated media.
+- Obsolete Loop 2 Markdown reports and redundant diagnostic scripts were removed.
+- `npm run check` covers Python compile, Node syntax, install, image-provider, release-candidate, renderer QA, and auto-calibration checks.
 
 ## Publication gate
 
