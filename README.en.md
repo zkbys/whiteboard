@@ -53,6 +53,7 @@ whiteboard-runs/<run-id>/
 ├── script/                    # Voiceover segments & visual beats
 ├── infographic/               # Infographic plan
 ├── images/*.model-generated.png   # Model-generated whiteboard images
+├── calibration/               # Automatic/manual element bbox calibration
 ├── board_source_for_e/        # Animation control layer
 ├── audio/                     # Narration, captions, timing
 ├── sync/                      # Action/camera QA reports
@@ -106,10 +107,32 @@ export OPENAI_API_KEY="..."
 
 An API key alone never triggers a billable call; the provider must also be set explicitly.
 
+## Auto-Calibration
+
+By default, the D stage (animation control layer) uses template coordinates for underlines, boxes, and camera framing. When the model-generated image (e.g., from seedance) drifts from the template layout, annotations land in the wrong place. The pipeline automatically detects real element positions from the actual PNG before D:
+
+```bash
+python3 hand-drawn-infographic-video-board/scripts/auto_calibrate.py \
+  --project-dir whiteboard-runs/<run-id> \
+  --provider auto \
+  --json
+```
+
+- Default order: VLM first (requires `OPENAI_API_KEY`), then local OCR.
+- Local OCR (recommended, no API cost): `pip install easyocr`
+- If auto-detection does not cover every target element, a pre-filled calibration tool is generated at `calibration_tool/index.html`. Adjust boxes, save to `calibration/`, then rerun D/E.
+
+Auto-calibration outputs:
+
+```text
+calibration/<boardId>.element_bboxes.json
+calibration/auto_calibration_report.json
+```
+
 ## Limitations
 
 - No hidden-cache scraping, no fake URLs, no placeholder substitutions
-- OCR/visual bbox initialization is outside v1.0; low-confidence geometry falls back to conservative framing
+- Auto-calibration supports VLM and local OCR; local OCR requires installing `easyocr` or `paddleocr`
 
 ## Developers
 

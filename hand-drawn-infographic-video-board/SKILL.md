@@ -43,7 +43,27 @@ python3 scripts/generate_board_package.py \
   --output path/to/project-output/board
 ```
 
-7. If an AI-generated PNG drifted from the control layout, generate the browser calibration helper, drag element boxes, download `<boardId>.element_bboxes.json`, place it in `calibration/`, and regenerate D:
+7. If an AI-generated PNG drifted from the control layout, run auto-calibration first. It detects element bboxes from the actual PNG and writes `calibration/<boardId>.element_bboxes.json`:
+
+```bash
+python3 scripts/auto_calibrate.py \
+  --project-dir path/to/project-output \
+  --provider auto \
+  --write-tool-on-partial \
+  --json
+```
+
+- Exit `0`: all required elements were found; proceed to D.
+- Exit `3`: some elements need review; the command writes a pre-filled calibration tool.
+- Exit `2`: runtime error; check `calibration/auto_calibration_report.json`.
+
+Providers:
+- `vlm`: OpenAI-compatible vision model (e.g. `gpt-4o`). Requires `OPENAI_API_KEY`.
+- `ocr`: local `easyocr` or `paddleocr` (optional installs).
+- `mock`: deterministic fixture backend for tests.
+- `auto`: tries `vlm`, then `ocr`, then `mock`.
+
+If auto-calibration does not cover every target, open the browser calibration helper, adjust the pre-filled boxes, download `<boardId>.element_bboxes.json`, place it in `calibration/`, and regenerate D:
 
 ```bash
 python3 scripts/create_calibration_tool.py \

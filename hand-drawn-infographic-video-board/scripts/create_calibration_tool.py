@@ -122,17 +122,53 @@ def load_existing_calibration(calibration_dir: Path, board_id: str) -> dict[str,
     return None
 
 
+def load_auto_prefill(prefill_path: Path | None) -> dict[str, dict[str, Any]]:
+    """Load auto-calibration report and map element id -> prefill record."""
+    if not prefill_path or not prefill_path.exists():
+        return {}
+    try:
+        data = read_json(prefill_path)
+    except (OSError, json.JSONDecodeError):
+        return {}
+    prefill: dict[str, dict[str, Any]] = {}
+    for board in data.get("boards") or []:
+        board_id = str(board.get("boardId", ""))
+        if not board_id:
+            continue
+        prefill[board_id] = {}
+        calibration_file = board.get("calibrationFile")
+        if calibration_file:
+            candidates = [
+                prefill_path.parent / calibration_file,
+                prefill_path.parent.parent / calibration_file,
+            ]
+            cal_path = next((p for p in candidates if p.exists()), None)
+            if cal_path:
+                cal = read_json(cal_path)
+                for element in cal.get("elements") or []:
+                    element_id = element.get("id")
+                    if element_id and element.get("bbox"):
+                        prefill[board_id][str(element_id)] = dict(element)
+                continue
+        # Fallback: use matched ids reported in the auto report.
+        for element_id in board.get("matchedIds") or []:
+            prefill[board_id][str(element_id)] = {"id": element_id}
+    return prefill
+
+
 def build_config(
     project: Path,
     asset_manifest_path: Path,
     infographic_plan_path: Path,
     calibration_dir: Path,
     html_dir: Path,
+    prefill_path: Path | None = None,
 ) -> dict[str, Any]:
     asset_manifest = read_json(asset_manifest_path)
     plan = read_json(infographic_plan_path) if infographic_plan_path.exists() else {"boards": []}
     assets = find_asset_boards(asset_manifest, project)
     spec_paths = spec_paths_from_plan(project, plan) or fallback_spec_paths(project)
+    auto_prefill = load_auto_prefill(prefill_path)
 
     boards = []
     for board_id in sorted(set(assets) | set(spec_paths)):
@@ -140,6 +176,13 @@ def build_config(
             continue
         spec = read_json(spec_paths[board_id]) if board_id in spec_paths else {"id": board_id}
         image_path = assets[board_id].get("imagePath")
+        candidates = element_candidates(spec)
+        # Merge auto-prefill into candidates so the tool draws initial boxes.
+        prefill_map = auto_prefill.get(board_id, {})
+        for candidate in candidates:
+            prefill = prefill_map.get(candidate["id"])
+            if prefill:
+                candidate["prefill"] = prefill
         boards.append(
             {
                 "boardId": board_id,
@@ -147,7 +190,7 @@ def build_config(
                 "image": copy_board_image(image_path, board_id, html_dir),
                 "width": assets[board_id].get("width") or spec.get("canvas", {}).get("width"),
                 "height": assets[board_id].get("height") or spec.get("canvas", {}).get("height"),
-                "elements": element_candidates(spec),
+                "elements": candidates,
                 "existing": load_existing_calibration(calibration_dir, board_id),
                 "downloadName": f"{board_id}.element_bboxes.json",
             }
@@ -426,6 +469,14 @@ HTML_TEMPLATE = """<!doctype html>
       const out = {};
       const existing = b.existing && Array.isArray(b.existing.elements) ? b.existing.elements : [];
       for (const item of existing) out[item.id] = structuredClone(item);
+      // Apply auto-calibration prefill only when no manual calibration exists.
+      if (Object.keys(out).length === 0) {
+        for (const candidate of b.elements || []) {
+          if (candidate.prefill && candidate.prefill.bbox) {
+            out[candidate.id] = structuredClone(candidate.prefill);
+          }
+        }
+      }
       return out;
     }
     function elementMeta(id) { return board().elements.find((item) => item.id === id) || { id, label: id }; }
@@ -692,6 +743,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", type=Path, help="Defaults to <project>/calibration_tool")
     parser.add_argument("--overwrite", action="store_true", help="Overwrite index.html if it already exists.")
     parser.add_argument("--json", action="store_true", help="Print machine-readable result.")
+    parser.add_argument(
+        "--prefill-from",
+        type=Path,
+        help="Path to auto_calibration_report.json; prefill detected bboxes into the tool.",
+    )
     return parser.parse_args()
 
 
@@ -708,7 +764,7 @@ def main() -> int:
     if not infographic_plan.exists():
         raise FileNotFoundError(f"infographic plan not found: {infographic_plan}")
 
-    config = build_config(project, asset_manifest, infographic_plan, calibration_dir, output_dir)
+    config = build_config(project, asset_manifest, infographic_plan, calibration_dir, output_dir, args.prefill_from)
     if not config["boards"]:
         raise ValueError("no boards found for calibration tool")
     index = write_tool(config, output_dir, args.overwrite)
