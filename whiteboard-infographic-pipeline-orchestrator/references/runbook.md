@@ -156,15 +156,40 @@ python3 whiteboard-infographic-pipeline-orchestrator/scripts/write_board_asset_m
   --overwrite
 ```
 
-## 5. Optional calibration layer
+## 5. Auto-calibration layer
 
-If the model PNG text or layout does not match D's first-draft control layer, create:
+Run auto-calibration against the actual model PNGs before falling back to manual box dragging:
+
+```bash
+python3 hand-drawn-infographic-video-board/scripts/auto_calibrate.py \
+  --project-dir /path/to/project-output \
+  --provider auto \
+  --write-tool-on-partial \
+  --json
+```
+
+Exit codes:
+
+- `0`: every required `targetElement` was matched; continue to D.
+- `3`: some elements were missed or had low confidence. The command generated a pre-filled calibration tool; see the next section.
+- `2`: runtime error. Inspect `calibration/auto_calibration_report.json`.
+
+Provider selection:
+
+- `auto` probes VLM (`OPENAI_API_KEY` + `WHITEBOARD_CALIBRATION_PROVIDER=vlm`), then local OCR (`easyocr`/`paddleocr`), then the `mock` fixture backend.
+- `vlm` works with any OpenAI-compatible `/v1/chat/completions` endpoint; set `--vlm-model` and `--vlm-base-url` if needed.
+- `ocr` requires `pip install easyocr` or `pip install paddleocr`.
+
+Auto-calibration writes:
 
 ```text
 /path/to/project-output/calibration/board-01.element_bboxes.json
+/path/to/project-output/calibration/auto_calibration_report.json
 ```
 
-Recommended helper:
+## 6. Manual calibration fallback (only when auto is partial)
+
+If auto-calibration exits `3`, review the pre-filled tool:
 
 ```bash
 python3 hand-drawn-infographic-video-board/scripts/create_calibration_tool.py \
@@ -174,7 +199,7 @@ python3 hand-drawn-infographic-video-board/scripts/create_calibration_tool.py \
   --overwrite
 ```
 
-Open `calibration_tool/index.html`, select a board and element, drag `BBox` around the whole visual object, drag `Target` around the exact text or region to annotate, click `Cursor` where the mouse should land, then download `<boardId>.element_bboxes.json` into `calibration/`.
+Open `calibration_tool/index.html`, select a board and element, adjust `BBox` around the whole visual object, adjust `Target` around the exact text or region to annotate, click `Cursor` where the mouse should land, then download `<boardId>.element_bboxes.json` into `calibration/`.
 
 Minimal shape:
 
@@ -195,7 +220,7 @@ Minimal shape:
 
 Use board-image pixel coordinates. It is acceptable to calibrate only elements that will be targeted by motion actions.
 
-## 6. Run D: board control package
+## 7. Run D: board control package
 
 ```bash
 python3 hand-drawn-infographic-video-board/scripts/generate_board_package.py \

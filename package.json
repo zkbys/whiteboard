@@ -4,7 +4,7 @@
   "private": false,
   "type": "module",
   "scripts": {
-    "check:python": "python3 -m py_compile scripts/install.py scripts/doctor.py skills/whiteboard-video/scripts/doctor.py ip-cognition-script-polisher/scripts/validate_script_package.py ip-hand-drawn-infographic-planner/scripts/validate_infographic_plan.py hand-drawn-infographic-video-board/scripts/generate_board_package.py hand-drawn-infographic-video-board/scripts/create_calibration_tool.py hand-drawn-infographic-video-board/scripts/extract_annotation_keyframes.py whiteboard-infographic-pipeline-orchestrator/scripts/validate_orchestrator_inputs.py whiteboard-infographic-pipeline-orchestrator/scripts/generate_board_images.py whiteboard-infographic-pipeline-orchestrator/scripts/write_board_asset_manifest.py whiteboard-infographic-pipeline-orchestrator/scripts/check_asset_identity.py whiteboard-infographic-pipeline-orchestrator/scripts/validate_release_candidate.py",
+    "check:python": "python3 -m py_compile scripts/install.py scripts/doctor.py skills/whiteboard-video/scripts/doctor.py ip-cognition-script-polisher/scripts/validate_script_package.py ip-hand-drawn-infographic-planner/scripts/validate_infographic_plan.py hand-drawn-infographic-video-board/scripts/generate_board_package.py hand-drawn-infographic-video-board/scripts/create_calibration_tool.py hand-drawn-infographic-video-board/scripts/auto_calibrate.py hand-drawn-infographic-video-board/scripts/extract_annotation_keyframes.py whiteboard-infographic-pipeline-orchestrator/scripts/validate_orchestrator_inputs.py whiteboard-infographic-pipeline-orchestrator/scripts/generate_board_images.py whiteboard-infographic-pipeline-orchestrator/scripts/write_board_asset_manifest.py whiteboard-infographic-pipeline-orchestrator/scripts/check_asset_identity.py whiteboard-infographic-pipeline-orchestrator/scripts/validate_release_candidate.py",
     "check:node": "node --check whiteboard-infographic-video-renderer/scripts/render_whiteboard_project.mjs && node --check whiteboard-infographic-video-renderer/scripts/render_multi_board_project.mjs && node --check whiteboard-infographic-video-renderer/scripts/validate_action_camera_qa.mjs",
     "check:inputs": "mkdir -p runs && python3 whiteboard-infographic-pipeline-orchestrator/scripts/validate_orchestrator_inputs.py --workspace . --topic-input whiteboard-infographic-pipeline-orchestrator/examples/minimal-topic-input.txt --project-dir runs/example-output",
     "check:renderer-qa": "node whiteboard-infographic-video-renderer/scripts/validate_action_camera_qa.mjs",
@@ -13,7 +13,8 @@
     "check:install": "python3 -m unittest tests/test_install.py",
     "check:image-provider": "python3 -m unittest tests/test_image_provider.py",
     "check:release-candidate": "python3 -m unittest tests/test_release_acceptance.py",
+    "check:auto-calibration": "python3 -m unittest tests/test_auto_calibration.py",
     "check:smoke": "python3 scripts/smoke_test.py --project-dir /tmp/whiteboard-smoke-fast --fast",
-    "check": "npm run check:python && npm run check:node && npm run check:inputs && npm run check:install && npm run check:image-provider && npm run check:release-candidate && npm run check:renderer-qa && npm run check:renderer-adversarial && npm run check:smoke"
+    "check": "npm run check:python && npm run check:node && npm run check:inputs && npm run check:install && npm run check:image-provider && npm run check:release-candidate && npm run check:renderer-qa && npm run check:renderer-adversarial && npm run check:auto-calibration && npm run check:smoke"
   }
 }
