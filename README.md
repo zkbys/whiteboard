@@ -52,6 +52,7 @@ whiteboard-runs/<run-id>/
 ├── script/                    # 口播文案与视觉节拍
 ├── infographic/               # 信息图规划
 ├── images/*.model-generated.png   # 模型生成的白板图
+├── calibration/               # 元素 bbox 自动/人工校准
 ├── board_source_for_e/        # 动画控制层
 ├── audio/                     # 配音、字幕、时间轴
 ├── sync/                      # 动作/镜头 QA 报告
@@ -105,10 +106,32 @@ export OPENAI_API_KEY="..."
 
 仅配置 key 不会触发计费，必须同时设置 `WHITEBOARD_IMAGE_PROVIDER=openai`。
 
+## 自动校准
+
+D 阶段（动画控制层）默认使用模板坐标绘制红线、方框和镜头。当模型生成图片（如 seedance）与模板布局存在漂移时，标注会偏移。流水线在 D 阶段前自动从实际 PNG 中检测元素真实位置：
+
+```bash
+python3 hand-drawn-infographic-video-board/scripts/auto_calibrate.py \
+  --project-dir whiteboard-runs/<run-id> \
+  --provider auto \
+  --json
+```
+
+- 默认先尝试 VLM（需 `OPENAI_API_KEY`），再降级到本地 OCR。
+- 本地 OCR（推荐，无 API 费用）：`pip install easyocr`
+- 若自动检测未覆盖全部目标元素，会生成预填充的校准工具 `calibration_tool/index.html`，人工微调后保存到 `calibration/` 再重新跑 D/E。
+
+自动校准输出：
+
+```text
+calibration/<boardId>.element_bboxes.json
+calibration/auto_calibration_report.json
+```
+
 ## 已知限制
 
 - 不搜索隐藏缓存，不伪造图片 URL，不用占位图冒充模型输出
-- OCR/视觉 bbox 精确定位不在 v1.0 范围内；低置信度时采用保守镜头
+- 自动校准支持 VLM 与本地 OCR；本地 OCR 需额外安装 `easyocr`/`paddleocr`
 
 ## 开发者
 
