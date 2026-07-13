@@ -14,6 +14,14 @@ from pathlib import Path
 from typing import Any
 
 
+try:
+    from dotenv import load_dotenv
+
+    DOTENV_AVAILABLE = True
+except ImportError:
+    DOTENV_AVAILABLE = False
+
+
 SKILL_NAME = "whiteboard-video"
 HYPERFRAMES_PACKAGE = "hyperframes@0.6.99"
 SOURCE_ROOT = Path(__file__).resolve().parents[1]
@@ -68,7 +76,17 @@ def parse_args() -> argparse.Namespace:
         default=30.0,
         help="Seconds allowed for external version probes.",
     )
+    parser.add_argument(
+        "--test-image",
+        action="store_true",
+        help="Attempt a real 256x256 image generation probe when in auto mode.",
+    )
     parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON.")
+    parser.add_argument(
+        "--env-file",
+        type=Path,
+        help="Load environment variables from a .env file.",
+    )
     return parser.parse_args()
 
 
@@ -81,6 +99,27 @@ def load_installation(skill_root: Path) -> dict[str, Any] | None:
     except (OSError, json.JSONDecodeError):
         return None
     return data if data.get("product") == SKILL_NAME else None
+
+
+def load_env_file(path: Path | None) -> None:
+    if not path:
+        return
+    if not path.is_file():
+        return
+    if DOTENV_AVAILABLE:
+        load_dotenv(path)
+        return
+    for line in path.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        if "=" not in stripped:
+            continue
+        key, value = stripped.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key.startswith("WHITEBOARD_") or key == "OPENAI_API_KEY":
+            os.environ.setdefault(key, value)
 
 
 def resolve_roots(args: argparse.Namespace) -> tuple[Path, Path, bool]:
@@ -292,7 +331,14 @@ def check_output(checks: list[dict[str, Any]], output_dir: Path) -> None:
     )
 
 
-def check_image_mode(checks: list[dict[str, Any]], mode: str) -> None:
+def check_image_mode(checks: list[dict[str, Any]], mode: str, test_image: bool, timeout: float) -> None:
+    config_advice = (
+        "To enable automatic image generation, set:\n"
+        "  export WHITEBOARD_IMAGE_MODE=auto\n"
+        "  export WHITEBOARD_IMAGE_PROVIDER=openai\n"
+        '  export OPENAI_API_KEY="..."'
+    )
+
     if mode == "interactive":
         add_check(
             checks,
@@ -305,6 +351,7 @@ def check_image_mode(checks: list[dict[str, Any]], mode: str) -> None:
             ),
             mode=mode,
             automatic_png_provider=False,
+            config_advice=config_advice,
         )
         return
 
@@ -312,22 +359,45 @@ def check_image_mode(checks: list[dict[str, Any]], mode: str) -> None:
     if provider == "openai":
         api_key_env = os.environ.get("WHITEBOARD_OPENAI_API_KEY_ENV", "OPENAI_API_KEY")
         configured = bool(os.environ.get(api_key_env))
+        details = {
+            "mode": mode,
+            "provider": provider,
+            "model": os.environ.get("WHITEBOARD_OPENAI_IMAGE_MODEL", "gpt-image-2"),
+            "api_key_env": api_key_env,
+            "api_key_present": configured,
+            "automatic_png_provider": configured,
+            "config_advice": config_advice,
+        }
+        if not configured:
+            add_check(
+                checks,
+                "image.mode",
+                "image",
+                "FAIL",
+                f"OpenAI image provider requires a non-empty {api_key_env} environment variable.",
+                **details,
+            )
+            return
+
+        if test_image:
+            probe = probe_openai_image(api_key_env, timeout)
+            details["probe"] = probe
+            status = "PASS" if probe.get("ok") else "FAIL"
+            message = (
+                "OpenAI image provider generated a 256x256 test image successfully."
+                if probe.get("ok")
+                else f"OpenAI image provider test generation failed: {probe.get('error')}"
+            )
+            add_check(checks, "image.mode", "image", status, message, **details)
+            return
+
         add_check(
             checks,
             "image.mode",
             "image",
-            "PASS" if configured else "FAIL",
-            (
-                "Automatic OpenAI image generation is configured."
-                if configured
-                else f"OpenAI image provider requires {api_key_env}."
-            ),
-            mode=mode,
-            provider=provider,
-            model=os.environ.get("WHITEBOARD_OPENAI_IMAGE_MODEL", "gpt-image-2"),
-            api_key_env=api_key_env,
-            api_key_present=configured,
-            automatic_png_provider=configured,
+            "PASS",
+            "Automatic OpenAI image generation is configured.",
+            **details,
         )
         return
 
@@ -353,6 +423,7 @@ def check_image_mode(checks: list[dict[str, Any]], mode: str) -> None:
             provider=provider,
             command=executable,
             automatic_png_provider=bool(executable),
+            config_advice=config_advice,
         )
         return
 
@@ -365,7 +436,79 @@ def check_image_mode(checks: list[dict[str, Any]], mode: str) -> None:
         mode=mode,
         provider=provider or None,
         automatic_png_provider=False,
+        config_advice=config_advice,
     )
+
+
+def probe_openai_image(api_key_env: str, timeout: float) -> dict[str, Any]:
+    import base64
+    import binascii
+    import tempfile
+    import urllib.error
+    import urllib.request
+
+    api_key = os.environ.get(api_key_env)
+    if not api_key:
+        return {"ok": False, "error": f"{api_key_env} is not set"}
+
+    payload = {
+        "model": os.environ.get("WHITEBOARD_OPENAI_IMAGE_MODEL", "gpt-image-2"),
+        "prompt": "A small hand-drawn whiteboard test square, 256x256.",
+        "n": 1,
+        "size": "1024x1024",
+        "quality": "low",
+        "output_format": "png",
+    }
+    base_url = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
+    request = urllib.request.Request(
+        base_url + "/images/generations",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": "whiteboard-video/0.2-doctor-probe",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            response_data = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        body = exc.read(600).decode("utf-8", "replace").replace(api_key, "[REDACTED]")
+        return {"ok": False, "error": f"HTTP {exc.code}: {body}"}
+    except urllib.error.URLError as exc:
+        return {"ok": False, "error": f"URL error: {exc.reason}"}
+    except TimeoutError:
+        return {"ok": False, "error": f"timed out after {timeout:g}s"}
+    except json.JSONDecodeError as exc:
+        return {"ok": False, "error": f"invalid JSON response: {exc}"}
+
+    images = response_data.get("data")
+    first = images[0] if isinstance(images, list) and images and isinstance(images[0], dict) else {}
+    encoded = first.get("b64_json")
+    if not isinstance(encoded, str) or not encoded:
+        return {"ok": False, "error": "response did not contain data[0].b64_json"}
+    try:
+        image_bytes = base64.b64decode(encoded, validate=True)
+    except (ValueError, binascii.Error) as exc:
+        return {"ok": False, "error": f"invalid base64: {exc}"}
+
+    if not image_bytes.startswith(b"\x89PNG"):
+        return {"ok": False, "error": "decoded bytes are not a PNG"}
+
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=True) as temp:
+            temp.write(image_bytes)
+            temp.flush()
+            from whiteboard_infographic_pipeline_orchestrator.scripts.write_board_asset_manifest import (
+                read_png_size,
+            )
+
+            width, height = read_png_size(Path(temp.name))
+    except Exception as exc:  # noqa: BLE001
+        return {"ok": False, "error": f"PNG size read failed: {exc}"}
+
+    return {"ok": True, "width": width, "height": height}
 
 
 def category_status(checks: list[dict[str, Any]], category: str) -> str:
@@ -422,7 +565,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             exit_code=code,
         )
     check_output(checks, args.output_dir)
-    check_image_mode(checks, args.image_mode)
+    check_image_mode(checks, args.image_mode, args.test_image, args.probe_timeout)
 
     summary = {
         category: category_status(checks, category)
@@ -461,6 +604,8 @@ def print_human(report: dict[str, Any]) -> None:
 
 def main() -> int:
     args = parse_args()
+    env_file = args.env_file or (Path.cwd() / ".env")
+    load_env_file(env_file)
     report = build_report(args)
     if args.json:
         print(json.dumps(report, ensure_ascii=False, indent=2))
