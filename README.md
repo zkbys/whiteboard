@@ -7,7 +7,6 @@
 <p align="center">
   <img src="https://raw.githubusercontent.com/zkbys/whiteboard/main/assets/demo.gif" width="720" alt="示例视频：主题「AI 工具越多，普通人反而越低效」（已加速 1.25×）">
   <br>
-  <sub>🎬 示例视频：主题「AI 工具越多，普通人反而越低效」（已加速 1.25×）</sub>
 </p>
 
 ## 🚀 快速开始
