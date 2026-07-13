@@ -44,6 +44,7 @@ let runContext = {
 };
 let verboseFlag = false;
 let originalArgv = [];
+let hyperframesCliArgs = null;
 
 function verbose(message, ...args) {
   if (!verboseFlag) return;
@@ -53,6 +54,33 @@ function verbose(message, ...args) {
   } else {
     console.log(`[${timestamp}] [verbose] ${message}`);
   }
+}
+
+function shellQuote(arg) {
+  if (/[\s"'\$\*|<>&;`]/.test(arg)) {
+    return `"${arg.replace(/"/g, '\\"')}"`;
+  }
+  return arg;
+}
+
+function detectHyperframesArgs(version) {
+  if (hyperframesCliArgs) return hyperframesCliArgs;
+  const help = runCapture("npx", ["--yes", `hyperframes@${version}`, "render", "--help"]);
+  const output = `${help.stdout}\n${help.stderr}`;
+  const positionalProject = /hyperframes render \[OPTIONS\] \[DIR\]/i.test(output);
+  hyperframesCliArgs = {
+    positionalProject: Boolean(positionalProject),
+    helpOutput: output,
+  };
+  verbose(`hyperframes render help detected positionalProject=${hyperframesCliArgs.positionalProject}`);
+  return hyperframesCliArgs;
+}
+
+function hyperframesVersion(version) {
+  const result = runCapture("npx", ["--yes", `hyperframes@${version}`, "--version"]);
+  const output = result.status === 0 ? (result.stdout || result.stderr).trim() : null;
+  verbose(`hyperframes version probe: ${output || "unknown"} (exit ${result.status})`);
+  return output;
 }
 
 function parseArgs(argv) {
@@ -1855,14 +1883,18 @@ function runHyperframesChecks(hfDir, version) {
   }
   assertCommand(inspect, "hyperframes inspect");
   verbose("hyperframes inspect OK");
-  return { lint, validate, inspect };
+  return { lint, validate, inspect, version: hyperframesVersion(version) };
 }
 
 function renderPreview(hfDir, videoPath, version, quality, fps) {
   ensureDir(dirname(videoPath));
-  const args = ["--yes", `hyperframes@${version}`, "render", "--output", videoPath, "--quality", quality];
+  const cliArgs = detectHyperframesArgs(version);
+  const base = ["--yes", `hyperframes@${version}`, "render"];
+  const positional = cliArgs?.positionalProject ? [hfDir] : [];
+  const outputFlag = cliArgs?.positionalProject ? "--output" : "--output";
+  const args = base.concat(positional, [outputFlag, videoPath, "--quality", quality]);
   if (fps) args.push("--fps", String(fps));
-  const printable = args.map((arg) => (String(arg).includes(" ") ? `"${arg}"` : arg)).join(" ");
+  const printable = args.map(shellQuote).join(" ");
   verbose(`hyperframes render command: npx ${printable}`);
   run("npx", args, { cwd: hfDir });
 }
