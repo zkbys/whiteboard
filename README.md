@@ -117,7 +117,7 @@ python3 hand-drawn-infographic-video-board/scripts/auto_calibrate.py \
   --json
 ```
 
-- `agent`：使用 Claude 视觉模型（推荐，通过 `ANTHROPIC_AUTH_TOKEN`），无需单独配置 `OPENAI_API_KEY`。需要显式设置 `--provider agent`、`WHITEBOARD_CALIBRATION_PROVIDER=agent` 或 `WHITEBOARD_CALIBRATION_AGENT_AUTO=1`。
+- `agent`：使用 Claude 视觉模型（推荐，通过 `ANTHROPIC_AUTH_TOKEN`），无需单独配置 `OPENAI_API_KEY`。需要显式设置 `--provider agent`、`WHITEBOARD_CALIBRATION_PROVIDER=agent` 或 `WHITEBOARD_CALIBRATION_AGENT_AUTO=1`；仅存在 `ANTHROPIC_AUTH_TOKEN` 不会自动触发 agent。
 - `vlm`：OpenAI 兼容接口（需 `OPENAI_API_KEY`）。
 - `ocr`：本地 OCR（无 API 费用）：`pip install easyocr`。
 - `mock`：确定性占位坐标，用于测试或无可用后端时的兜底。

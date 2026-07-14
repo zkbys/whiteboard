@@ -390,16 +390,33 @@ class AgentBackend(CalibrationBackend):
 
     @staticmethod
     def _parse_response(content: str) -> list[DetectedElement]:
-        """Parse a JSON response that may be wrapped in markdown fences."""
+        """Parse a JSON response that may contain CoT text before a JSON block."""
         text = content.strip()
-        if text.startswith("```"):
-            lines = text.splitlines()
-            if lines[0].startswith("```"):
-                lines = lines[1:]
-            if lines and lines[-1].startswith("```"):
-                lines = lines[:-1]
-            text = "\n".join(lines).strip()
-        data = json.loads(text)
+        # If the response ends with a fenced JSON block, extract it.
+        if "```" in text:
+            parts = text.rsplit("```", 1)
+            # parts[-1] is after the last fence; if empty, the fence enclosed JSON.
+            candidate = parts[-2] if len(parts) > 1 and not parts[-1].strip() else text
+            # Find the last opening fence and take what follows it.
+            if "```" in candidate:
+                _, fenced = candidate.rsplit("```", 1)
+                text = fenced.strip()
+            else:
+                text = text.rsplit("```", 1)[0].strip()
+
+        # Fall back to finding the last JSON object in the text.
+        if not text.startswith("{"):
+            start = text.rfind("{")
+            end = text.rfind("}")
+            if start == -1 or end == -1 or end < start:
+                raise ValueError("No JSON object found in agent response")
+            text = text[start : end + 1]
+
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Agent response is not valid JSON: {exc}") from exc
+
         elements = data.get("elements", []) if isinstance(data, dict) else []
         results: list[DetectedElement] = []
         for item in elements:

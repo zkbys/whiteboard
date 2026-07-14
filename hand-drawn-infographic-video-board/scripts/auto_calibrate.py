@@ -221,8 +221,7 @@ def resolve_auto_provider(project_dir: Path, args: argparse.Namespace) -> Calibr
         return resolve_backend(env_provider, **kwargs)
 
     agent_explicit = (
-        env_provider == "agent"
-        or os.environ.get("WHITEBOARD_CALIBRATION_AGENT_AUTO", "").strip() == "1"
+        os.environ.get("WHITEBOARD_CALIBRATION_AGENT_AUTO", "").strip() == "1"
     )
     if agent_explicit:
         agent = AgentBackend(

@@ -177,10 +177,12 @@ Exit codes:
 Provider selection:
 
 - `auto` first honors `WHITEBOARD_CALIBRATION_PROVIDER` if set to a concrete provider.
-- `agent` (Claude/Anthropic vision) is tried next when `WHITEBOARD_CALIBRATION_PROVIDER=agent` or `WHITEBOARD_CALIBRATION_AGENT_AUTO=1` is set and `ANTHROPIC_AUTH_TOKEN` is available. The mere presence of `ANTHROPIC_AUTH_TOKEN` is not enough; explicit provider configuration is required to avoid accidental billable calls.
+- `agent` (Claude/Anthropic vision) is selected when `--provider agent` or `WHITEBOARD_CALIBRATION_PROVIDER=agent` is set and `ANTHROPIC_AUTH_TOKEN` is available. To let `auto` try `agent` first, set `WHITEBOARD_CALIBRATION_AGENT_AUTO=1`.
 - `vlm` works with any OpenAI-compatible `/v1/chat/completions` endpoint; set `--vlm-model` and `--vlm-base-url` if needed.
 - `ocr` requires `pip install easyocr` or `pip install paddleocr`.
 - `mock` is the deterministic fallback used when nothing else is available.
+
+Note: the agent provider is never auto-selected from the mere presence of `ANTHROPIC_AUTH_TOKEN`; explicit provider configuration is required to avoid accidental billable calls.
 
 Environment variables:
 
