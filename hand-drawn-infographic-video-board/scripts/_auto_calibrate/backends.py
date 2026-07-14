@@ -292,6 +292,142 @@ class OcrBackend(CalibrationBackend):
         return detected
 
 
+class AgentBackend(CalibrationBackend):
+    """Claude/Anthropic Messages API backend for whiteboard element detection.
+
+    Uses the Anthropic Messages API with a vision prompt. The API key is read
+    from the configured environment variable at request time and is never
+    persisted or logged.
+    """
+
+    name = "agent"
+
+    def __init__(
+        self,
+        model: str = "claude-opus-4-8",
+        api_key_env: str = "ANTHROPIC_AUTH_TOKEN",
+        base_url_env: str = "ANTHROPIC_BASE_URL",
+        timeout: float = 120.0,
+    ) -> None:
+        self.model = model
+        self.api_key_env = api_key_env
+        self.base_url = (os.environ.get(base_url_env) or "https://api.anthropic.com").rstrip("/")
+        self.timeout = timeout
+
+    def is_available(self) -> bool:
+        return bool(os.environ.get(self.api_key_env))
+
+    def _encode_image(self, image_path: Path) -> str:
+        data = image_path.read_bytes()
+        return base64.b64encode(data).decode("utf-8")
+
+    def _build_prompt(self, candidates: list[dict[str, Any]]) -> str:
+        labels = "\n".join(
+            f'- {cand.get("id")}: {cand.get("label") or cand.get("text") or cand.get("id")}'
+            for cand in candidates
+        )
+        return (
+            "You are a precise layout analyzer for a hand-drawn whiteboard explainer video. "
+            "Detect the following text elements in the image and return their pixel bounding "
+            "boxes in the image coordinate system.\n\n"
+            f"Elements to find:\n{labels}\n\n"
+            "First, briefly describe each element you see and where it is located. Then "
+            "return ONLY a JSON object in this exact format:\n"
+            '{"elements": [{"text": "exact text", "bbox": [x, y, width, height], "confidence": 0.95}]}\n'
+            "Use integer pixel coordinates. If an element is not found, omit it."
+        )
+
+    def detect(self, image_path: Path, candidates: list[dict[str, Any]]) -> list[DetectedElement]:
+        api_key = os.environ.get(self.api_key_env)
+        if not api_key:
+            raise RuntimeError(f"Agent backend requires {self.api_key_env} environment variable")
+
+        b64_image = self._encode_image(image_path)
+        prompt = self._build_prompt(candidates)
+        payload: dict[str, Any] = {
+            "model": self.model,
+            "max_tokens": 4096,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": "image/png",
+                                "data": b64_image,
+                            },
+                        },
+                    ],
+                }
+            ],
+        }
+        request = urllib.request.Request(
+            f"{self.base_url}/v1/messages",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={
+                "x-api-key": api_key,
+                "anthropic-version": "2023-06-01",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                result = json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            body = exc.read().decode("utf-8", errors="ignore")
+            raise RuntimeError(f"Anthropic API error: {exc.code} {body}") from exc
+
+        content = result.get("content", [])
+        text = ""
+        for block in content:
+            if block.get("type") == "text":
+                text += block.get("text", "")
+        return self._parse_response(text)
+
+    @staticmethod
+    def _parse_response(content: str) -> list[DetectedElement]:
+        """Parse a JSON response that may be wrapped in markdown fences."""
+        text = content.strip()
+        if text.startswith("```"):
+            lines = text.splitlines()
+            if lines[0].startswith("```"):
+                lines = lines[1:]
+            if lines and lines[-1].startswith("```"):
+                lines = lines[:-1]
+            text = "\n".join(lines).strip()
+        data = json.loads(text)
+        elements = data.get("elements", []) if isinstance(data, dict) else []
+        results: list[DetectedElement] = []
+        for item in elements:
+            if not isinstance(item, dict):
+                continue
+            bbox = item.get("bbox")
+            if not isinstance(bbox, list) or len(bbox) != 4:
+                continue
+            results.append(
+                DetectedElement(
+                    text=str(item.get("text", "")),
+                    bbox=[float(v) for v in bbox],
+                    confidence=float(item.get("confidence", 0.8)),
+                )
+            )
+        return results
+
+    def dry_run_info(self, image_path: Path, candidates: list[dict[str, Any]]) -> dict[str, Any]:
+        """Return the prompt and image size without calling the API."""
+        return {
+            "model": self.model,
+            "baseUrl": self.base_url,
+            "imageBytes": image_path.stat().st_size if image_path.exists() else 0,
+            "candidateCount": len(candidates),
+            "prompt": self._build_prompt(candidates),
+        }
+
+
 def resolve_backend(provider: str, **kwargs: Any) -> CalibrationBackend:
     """Resolve a provider string to a backend instance."""
     provider = provider.lower().strip()
@@ -302,6 +438,13 @@ def resolve_backend(provider: str, **kwargs: Any) -> CalibrationBackend:
             model=kwargs.get("vlm_model", "gpt-4o"),
             base_url=kwargs.get("vlm_base_url"),
             api_key_env=kwargs.get("api_key_env", "OPENAI_API_KEY"),
+            timeout=float(kwargs.get("timeout", 120.0)),
+        )
+    if provider in {"agent", "claude"}:
+        return AgentBackend(
+            model=kwargs.get("agent_model", "claude-opus-4-8"),
+            api_key_env=kwargs.get("agent_api_key_env", "ANTHROPIC_AUTH_TOKEN"),
+            base_url_env=kwargs.get("agent_base_url_env", "ANTHROPIC_BASE_URL"),
             timeout=float(kwargs.get("timeout", 120.0)),
         )
     if provider == "ocr":

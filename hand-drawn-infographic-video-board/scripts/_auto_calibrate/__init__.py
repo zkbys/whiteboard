@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from .backends import (
+    AgentBackend,
     CalibrationBackend,
     DetectedElement,
     MockBackend,
@@ -14,6 +15,7 @@ from .geometry import build_calibrated_element
 from .matching import match_candidates
 
 __all__ = [
+    "AgentBackend",
     "CalibrationBackend",
     "DetectedElement",
     "MockBackend",

@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from _auto_calibrate import (
+    AgentBackend,
     CalibrationBackend,
     MockBackend,
     OcrBackend,
@@ -48,13 +49,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--project-dir", type=Path, required=True)
     parser.add_argument(
         "--provider",
-        choices=("auto", "vlm", "ocr", "mock"),
+        choices=("auto", "agent", "vlm", "ocr", "mock"),
         default="auto",
-        help="Detection backend. auto tries vlm then ocr then mock/manual.",
+        help="Detection backend. auto tries configured agent, then vlm, then ocr, then mock/manual.",
     )
     parser.add_argument("--vlm-model", default=os.environ.get("WHITEBOARD_CALIBRATION_VLM_MODEL", "gpt-4o"))
     parser.add_argument("--vlm-base-url", default=os.environ.get("OPENAI_BASE_URL"))
     parser.add_argument("--api-key-env", default=os.environ.get("WHITEBOARD_CALIBRATION_API_KEY_ENV", "OPENAI_API_KEY"))
+    parser.add_argument("--agent-model", default=os.environ.get("WHITEBOARD_CALIBRATION_AGENT_MODEL", "claude-opus-4-8"))
+    parser.add_argument("--agent-base-url", default=os.environ.get("ANTHROPIC_BASE_URL"))
+    parser.add_argument(
+        "--agent-api-key-env",
+        default=os.environ.get("WHITEBOARD_CALIBRATION_AGENT_API_KEY_ENV", "ANTHROPIC_AUTH_TOKEN"),
+    )
     parser.add_argument("--ocr-backend", choices=("auto", "easyocr", "paddleocr"), default="auto")
     parser.add_argument("--min-confidence", type=float, default=0.6)
     parser.add_argument("--timeout", type=float, default=120.0)
@@ -210,7 +217,22 @@ def resolve_auto_provider(project_dir: Path, args: argparse.Namespace) -> Calibr
     """Resolve the auto provider by probing available backends."""
     env_provider = os.environ.get("WHITEBOARD_CALIBRATION_PROVIDER", "").strip().lower()
     if env_provider and env_provider != "auto":
-        return resolve_backend(env_provider, **vars(args))
+        kwargs = {k: v for k, v in vars(args).items() if k != "provider"}
+        return resolve_backend(env_provider, **kwargs)
+
+    agent_explicit = (
+        env_provider == "agent"
+        or os.environ.get("WHITEBOARD_CALIBRATION_AGENT_AUTO", "").strip() == "1"
+    )
+    if agent_explicit:
+        agent = AgentBackend(
+            model=args.agent_model,
+            api_key_env=args.agent_api_key_env,
+            base_url_env="ANTHROPIC_BASE_URL",
+            timeout=args.timeout,
+        )
+        if agent.is_available():
+            return agent
 
     vlm = VlmBackend(
         model=args.vlm_model,
@@ -390,11 +412,14 @@ def main() -> int:
             api_key_env=args.api_key_env,
             timeout=args.timeout,
             ocr_backend=args.ocr_backend,
+            agent_model=args.agent_model,
+            agent_base_url_env="ANTHROPIC_BASE_URL",
+            agent_api_key_env=args.agent_api_key_env,
         )
 
-    if args.dry_run and isinstance(backend, VlmBackend):
+    if args.dry_run and hasattr(backend, "dry_run_info"):
         info = backend.dry_run_info(find_board_image(project_dir, board_ids[0]) or Path(), [])
-        print(json.dumps({"dryRun": True, "vlm": info}, ensure_ascii=False, indent=2))
+        print(json.dumps({"dryRun": True, backend.name: info}, ensure_ascii=False, indent=2))
         return 0
 
     board_reports: list[dict[str, Any]] = []
