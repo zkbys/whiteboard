@@ -265,7 +265,7 @@ class AutoCalibrationTests(unittest.TestCase):
             self.assertTrue(report.get("dryRun"))
             self.assertEqual(report.get("agent", {}).get("model"), "claude-opus-4-8")
 
-    def test_agent_backend_requires_explicit_provider(self) -> None:
+    def test_agent_auto_selected_without_vlm_key(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             project = make_project(Path(tmpdir))
             env = os.environ.copy()
@@ -281,6 +281,7 @@ class AutoCalibrationTests(unittest.TestCase):
                     str(project),
                     "--provider",
                     "auto",
+                    "--dry-run",
                     "--json",
                 ],
                 cwd=REPO_ROOT,
@@ -289,8 +290,11 @@ class AutoCalibrationTests(unittest.TestCase):
                 check=False,
                 env=env,
             )
-            report = json.loads(result.stdout) if result.stdout else {}
-            self.assertNotEqual(report.get("provider"), "agent")
+            self.assertEqual(result.returncode, 0)
+            report = json.loads(result.stdout)
+            self.assertTrue(report.get("dryRun"))
+            self.assertIn("agent", report)
+            self.assertEqual(report.get("agent", {}).get("model"), "claude-opus-4-8")
 
     def test_agent_auto_selected_when_configured(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

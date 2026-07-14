@@ -66,7 +66,7 @@ Keep the module responsibilities separated:
 - Do not overwrite a same-name directory without this project's valid `installation.json` marker.
 - Keep generated user projects outside the managed installation, defaulting to `<cwd>/whiteboard-runs/`.
 - Keep `interactive` as the safe default. Advertise `auto` only when `generate_board_images.py` writes validated PNGs directly and its report is `complete`.
-- Never trigger a billable image request from API-key presence alone; require explicit provider configuration and never log the key. This applies to image generation and to calibration providers (VLM and agent/Claude).
+- Never trigger a billable image-generation request from API-key presence alone; require explicit provider configuration and never log the key.
 
 ## Latest-Version Guardrails
 

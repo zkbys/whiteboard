@@ -118,7 +118,7 @@ python3 hand-drawn-infographic-video-board/scripts/auto_calibrate.py \
   --json
 ```
 
-- `agent`: Claude vision model (recommended, uses `ANTHROPIC_AUTH_TOKEN`), no separate `OPENAI_API_KEY` needed. Requires explicit `--provider agent`, `WHITEBOARD_CALIBRATION_PROVIDER=agent`, or `WHITEBOARD_CALIBRATION_AGENT_AUTO=1`; the mere presence of `ANTHROPIC_AUTH_TOKEN` does not auto-select agent.
+- `agent`: Claude vision model (recommended, uses `ANTHROPIC_AUTH_TOKEN`), no separate `OPENAI_API_KEY` needed. `--provider auto` automatically tries agent when `OPENAI_API_KEY` is not configured.
 - `vlm`: OpenAI-compatible endpoint (requires `OPENAI_API_KEY`).
 - `ocr`: Local OCR (no API cost): `pip install easyocr`.
 - `mock`: Deterministic placeholder coordinates for testing or fallback when no backend is available.

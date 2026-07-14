@@ -223,7 +223,9 @@ def resolve_auto_provider(project_dir: Path, args: argparse.Namespace) -> Calibr
     agent_explicit = (
         os.environ.get("WHITEBOARD_CALIBRATION_AGENT_AUTO", "").strip() == "1"
     )
-    if agent_explicit:
+    openai_key = os.environ.get(args.api_key_env)
+    anthropic_key = os.environ.get(args.agent_api_key_env)
+    if agent_explicit or (anthropic_key and not openai_key):
         agent = AgentBackend(
             model=args.agent_model,
             api_key_env=args.agent_api_key_env,
