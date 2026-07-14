@@ -176,9 +176,23 @@ Exit codes:
 
 Provider selection:
 
-- `auto` probes VLM (`OPENAI_API_KEY` + `WHITEBOARD_CALIBRATION_PROVIDER=vlm`), then local OCR (`easyocr`/`paddleocr`), then the `mock` fixture backend.
+- `auto` first honors `WHITEBOARD_CALIBRATION_PROVIDER` if set to a concrete provider.
+- `agent` (Claude/Anthropic vision) is tried next when `WHITEBOARD_CALIBRATION_PROVIDER=agent` or `WHITEBOARD_CALIBRATION_AGENT_AUTO=1` is set and `ANTHROPIC_AUTH_TOKEN` is available. The mere presence of `ANTHROPIC_AUTH_TOKEN` is not enough; explicit provider configuration is required to avoid accidental billable calls.
 - `vlm` works with any OpenAI-compatible `/v1/chat/completions` endpoint; set `--vlm-model` and `--vlm-base-url` if needed.
 - `ocr` requires `pip install easyocr` or `pip install paddleocr`.
+- `mock` is the deterministic fallback used when nothing else is available.
+
+Environment variables:
+
+| Variable | Purpose | Default |
+|---|---|---|
+| `ANTHROPIC_AUTH_TOKEN` | Anthropic API key for the `agent` provider | required for `agent` |
+| `ANTHROPIC_BASE_URL` | Anthropic API base URL | `https://api.anthropic.com` |
+| `WHITEBOARD_CALIBRATION_PROVIDER` | Override provider (`auto`, `agent`, `vlm`, `ocr`, `mock`) | `auto` |
+| `WHITEBOARD_CALIBRATION_AGENT_MODEL` | Claude model for the `agent` provider | `claude-opus-4-8` |
+| `WHITEBOARD_CALIBRATION_AGENT_AUTO` | Set to `1` to let `auto` try `agent` before VLM/OCR | unset |
+| `WHITEBOARD_CALIBRATION_VLM_MODEL` | VLM model name | `gpt-4o` |
+| `OPENAI_BASE_URL` | OpenAI-compatible base URL | `https://api.openai.com/v1` |
 
 Auto-calibration writes:
 

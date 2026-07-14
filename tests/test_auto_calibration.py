@@ -147,6 +147,17 @@ def run_auto_calibrate(project: Path, *extra: str) -> tuple[int, dict[str, objec
     return result.returncode, report
 
 
+def run_auto_calibrate_raw(project: Path, *extra: str) -> subprocess.CompletedProcess[str]:
+    """Run auto_calibrate without forcing the mock backend."""
+    return subprocess.run(
+        [sys.executable, str(AUTO_CALIBRATE), "--project-dir", str(project), "--json", *extra],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
 class AutoCalibrationTests(unittest.TestCase):
     def test_mock_backend_complete(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -226,6 +237,146 @@ class AutoCalibrationTests(unittest.TestCase):
             output = json.loads(result.stdout)
             self.assertEqual(output["status"], "PASS")
             self.assertTrue((Path(output["index"])).exists())
+
+    def test_agent_backend_dry_run(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            project = make_project(Path(tmpdir))
+            env = os.environ.copy()
+            env["ANTHROPIC_AUTH_TOKEN"] = "dummy"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(AUTO_CALIBRATE),
+                    "--project-dir",
+                    str(project),
+                    "--provider",
+                    "agent",
+                    "--dry-run",
+                    "--json",
+                ],
+                cwd=REPO_ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+                env=env,
+            )
+            self.assertEqual(result.returncode, 0)
+            report = json.loads(result.stdout)
+            self.assertTrue(report.get("dryRun"))
+            self.assertEqual(report.get("agent", {}).get("model"), "claude-opus-4-8")
+
+    def test_agent_backend_requires_explicit_provider(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            project = make_project(Path(tmpdir))
+            env = os.environ.copy()
+            env["ANTHROPIC_AUTH_TOKEN"] = "dummy"
+            env.pop("OPENAI_API_KEY", None)
+            env.pop("WHITEBOARD_CALIBRATION_PROVIDER", None)
+            env.pop("WHITEBOARD_CALIBRATION_AGENT_AUTO", None)
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(AUTO_CALIBRATE),
+                    "--project-dir",
+                    str(project),
+                    "--provider",
+                    "auto",
+                    "--json",
+                ],
+                cwd=REPO_ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+                env=env,
+            )
+            report = json.loads(result.stdout) if result.stdout else {}
+            self.assertNotEqual(report.get("provider"), "agent")
+
+    def test_agent_auto_selected_when_configured(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            project = make_project(Path(tmpdir))
+            env = os.environ.copy()
+            env["ANTHROPIC_AUTH_TOKEN"] = "dummy"
+            env["WHITEBOARD_CALIBRATION_PROVIDER"] = "agent"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(AUTO_CALIBRATE),
+                    "--project-dir",
+                    str(project),
+                    "--provider",
+                    "auto",
+                    "--dry-run",
+                    "--json",
+                ],
+                cwd=REPO_ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+                env=env,
+            )
+            self.assertEqual(result.returncode, 0)
+            report = json.loads(result.stdout)
+            self.assertTrue(report.get("dryRun"))
+            self.assertEqual(report.get("agent", {}).get("model"), "claude-opus-4-8")
+
+    def test_agent_backend_mocked_detect(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            project = make_project(Path(tmpdir))
+            env = os.environ.copy()
+            env["ANTHROPIC_AUTH_TOKEN"] = "dummy"
+            env["WHITEBOARD_CALIBRATION_PROVIDER"] = "agent"
+            # Run auto_calibrate with --provider agent and a patched AgentBackend.detect.
+            shim = f"""
+import json
+import sys
+from pathlib import Path
+
+scripts_dir = Path({str(REPO_ROOT / "hand-drawn-infographic-video-board" / "scripts")!r})
+sys.path.insert(0, str(scripts_dir))
+sys.path.insert(0, str(scripts_dir.parent))
+
+from _auto_calibrate import AgentBackend, DetectedElement
+from auto_calibrate import main
+
+def _fake_detect(self, image_path, candidates):
+    return [
+        DetectedElement(text="AI 工具越多，普通人反而越低效", bbox=[100.0, 120.0, 600.0, 80.0], confidence=0.97),
+        DetectedElement(text="判断流程", bbox=[900.0, 300.0, 200.0, 60.0], confidence=0.94),
+    ]
+
+AgentBackend.detect = _fake_detect
+
+sys.argv = [
+    "auto_calibrate",
+    "--project-dir", {str(project)!r},
+    "--provider", "agent",
+    "--json",
+]
+try:
+    raise SystemExit(main())
+except SystemExit as exc:
+    sys.exit(exc.code)
+"""
+            shim_path = Path(tmpdir) / "agent_shim.py"
+            shim_path.write_text(shim, encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, str(shim_path)],
+                cwd=REPO_ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+                env=env,
+            )
+            self.assertEqual(result.returncode, 0, msg=result.stderr)
+            report = json.loads(result.stdout)
+            self.assertEqual(report.get("provider"), "agent")
+            self.assertEqual(report["boards"][0]["matchedCount"], 2)
+            cal_path = project / "calibration" / "board-01.element_bboxes.json"
+            self.assertTrue(cal_path.exists())
+            cal = json.loads(cal_path.read_text(encoding="utf-8"))
+            ids = {el["id"] for el in cal["elements"]}
+            self.assertEqual(ids, {"title", "judgment"})
 
 
 if __name__ == "__main__":

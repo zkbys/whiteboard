@@ -55,7 +55,7 @@ Run the fixed sequence:
 4. Route every required board prompt through the configured image provider.
 5. Complete automatic PNG validation or the interactive image handoff described below.
 6. Write and validate `board_asset_manifest.json`.
-7. Calibrate generated-image bboxes when needed.
+7. Calibrate generated-image bboxes when needed. Use `--provider agent` (or set `WHITEBOARD_CALIBRATION_PROVIDER=agent` / `WHITEBOARD_CALIBRATION_AGENT_AUTO=1`) to run calibration through the Claude vision model via `ANTHROPIC_AUTH_TOKEN`, avoiding a separate OpenAI key. Otherwise `--provider auto` falls back to VLM, OCR, or mock as configured.
 8. Generate D into `board_source_for_e/`.
 9. Render E from measured audio timing into editable HyperFrames and MP4.
 10. Run asset identity and action/camera QA, inspect keyframes, and write `integration_report.md`.
