@@ -117,9 +117,12 @@ python3 hand-drawn-infographic-video-board/scripts/auto_calibrate.py \
   --json
 ```
 
-- 默认先尝试 VLM（需 `OPENAI_API_KEY`），再降级到本地 OCR。
-- 本地 OCR（推荐，无 API 费用）：`pip install easyocr`
-- 若自动检测未覆盖全部目标元素，会生成预填充的校准工具 `calibration_tool/index.html`，人工微调后保存到 `calibration/` 再重新跑 D/E。
+- `agent`：使用 Claude 视觉模型（推荐，通过 `ANTHROPIC_AUTH_TOKEN`），无需单独配置 `OPENAI_API_KEY`。需要显式设置 `--provider agent`、`WHITEBOARD_CALIBRATION_PROVIDER=agent` 或 `WHITEBOARD_CALIBRATION_AGENT_AUTO=1`。
+- `vlm`：OpenAI 兼容接口（需 `OPENAI_API_KEY`）。
+- `ocr`：本地 OCR（无 API 费用）：`pip install easyocr`。
+- `mock`：确定性占位坐标，用于测试或无可用后端时的兜底。
+
+若自动检测未覆盖全部目标元素，会生成预填充的校准工具 `calibration_tool/index.html`，人工微调后保存到 `calibration/` 再重新跑 D/E。
 
 自动校准输出：
 
@@ -131,7 +134,7 @@ calibration/auto_calibration_report.json
 ## 已知限制
 
 - 不搜索隐藏缓存，不伪造图片 URL，不用占位图冒充模型输出
-- 自动校准支持 VLM 与本地 OCR；本地 OCR 需额外安装 `easyocr`/`paddleocr`
+- 自动校准支持 agent、VLM 与本地 OCR；本地 OCR 需额外安装 `easyocr`/`paddleocr`
 
 ## 开发者
 

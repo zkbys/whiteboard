@@ -118,9 +118,12 @@ python3 hand-drawn-infographic-video-board/scripts/auto_calibrate.py \
   --json
 ```
 
-- Default order: VLM first (requires `OPENAI_API_KEY`), then local OCR.
-- Local OCR (recommended, no API cost): `pip install easyocr`
-- If auto-detection does not cover every target element, a pre-filled calibration tool is generated at `calibration_tool/index.html`. Adjust boxes, save to `calibration/`, then rerun D/E.
+- `agent`: Claude vision model (recommended, uses `ANTHROPIC_AUTH_TOKEN`), no separate `OPENAI_API_KEY` needed. Requires explicit `--provider agent`, `WHITEBOARD_CALIBRATION_PROVIDER=agent`, or `WHITEBOARD_CALIBRATION_AGENT_AUTO=1`.
+- `vlm`: OpenAI-compatible endpoint (requires `OPENAI_API_KEY`).
+- `ocr`: Local OCR (no API cost): `pip install easyocr`.
+- `mock`: Deterministic placeholder coordinates for testing or fallback when no backend is available.
+
+If auto-detection does not cover every target element, a pre-filled calibration tool is generated at `calibration_tool/index.html`. Adjust boxes, save to `calibration/`, then rerun D/E.
 
 Auto-calibration outputs:
 
@@ -132,7 +135,7 @@ calibration/auto_calibration_report.json
 ## Limitations
 
 - No hidden-cache scraping, no fake URLs, no placeholder substitutions
-- Auto-calibration supports VLM and local OCR; local OCR requires installing `easyocr` or `paddleocr`
+- Auto-calibration supports agent, VLM, and local OCR; local OCR requires installing `easyocr` or `paddleocr`
 
 ## Developers
 
